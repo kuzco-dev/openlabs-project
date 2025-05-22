@@ -1,6 +1,5 @@
 import { LoginForm } from "@/components/login-form";
 import { GalleryVerticalEnd } from "lucide-react"
-import Image from 'next/image'
 
 export default function Page() {
   return (

@@ -1,6 +1,5 @@
 import { SignupForm } from "@/components/signup-form";
 import { GalleryVerticalEnd } from "lucide-react"
-import Image from 'next/image'
 export default function Page() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
