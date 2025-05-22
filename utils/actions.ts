@@ -1,3 +1,5 @@
+'use server'
+
 import { z } from 'zod'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
@@ -14,7 +16,7 @@ const signupSchema = z.object({
     email: z.string().email('Invalid email'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     role: z.enum(['admin', 'user'], {
-        errorMap: () => ({ message: 'Role must be either admin or user'}),
+        errorMap: () => ({ message: 'Role must be either admin or student'}),
     }),
 })
 export type SignupSchemaType = z.infer<typeof signupSchema>
@@ -26,44 +28,49 @@ Server Action: login form submission.
     - On success: redirects to /admin
     - On failure: returns structured error response
 */
-export async function login(data: unknown) {
-  try {
-    if (!(data instanceof FormData)) {
-      return { 
-        success: false, 
-        message: 'Invalid data format' 
-      }
-    }
-    const formObject = Object.fromEntries(data.entries())
-    const formValid = loginSchema.safeParse(formObject)
+export async function login(prevState: any, data: unknown) {
+    try {
+        if (!(data instanceof FormData)) {
+            return { 
+                success: false, 
+                message: 'Invalid data format' 
+            }
+        }
+        const formObject = Object.fromEntries(data.entries())
+        console.log(formObject)
+        const formValid = loginSchema.safeParse(formObject)
 
-    if (!formValid.success) {
-      const zodErrors = formValid.error.flatten()
-      return {
-        success: false,
-        message: zodErrors.fieldErrors,
-      }
-    }
-    const validData: LoginSchemaType = formValid.data
-    const supabase = await createClient()
-    const { error: supabaseError } = await supabase.auth.signInWithPassword({
-      email: validData.email,
-      password: validData.password,
-    })
-    if (supabaseError) {
-      return { 
+        if (!formValid.success) {
+            const zodErrors = formValid.error.flatten()
+            console.log(zodErrors);
+            const messages = Object.values(zodErrors.fieldErrors)
+                .flat()
+                .join(', ')
+            return {
+                success: false,
+                message: messages || 'Invalid data format',
+        }
+        }
+        const validData: LoginSchemaType = formValid.data
+        const supabase = await createClient()
+        const { error: supabaseError } = await supabase.auth.signInWithPassword({
+        email: validData.email,
+        password: validData.password,
+        })
+        if (supabaseError) {
+        return { 
+            success: false, 
+            message: 'Internal error, try later' 
+        }
+        }
+        redirect('/')
+    } catch (error) {
+        console.error('Unexpected error:', error)
+        return { 
         success: false, 
         message: 'Internal error, try later' 
-      }
+        }
     }
-    redirect('/')
-  } catch (error) {
-    console.error('Unexpected error:', error)
-    return { 
-      success: false, 
-      message: 'Internal error, try later' 
-    }
-  }
 }
 
 /*
@@ -74,7 +81,7 @@ Server Action: signup form submission.
     - On success: redirects to /admin
     - On failure: returns structured error response
 */
-export async function signup(data: unknown) {
+export async function signup(prevState: any, data: unknown) {
     try {
         if (!(data instanceof FormData)) {
             return { 
@@ -84,11 +91,15 @@ export async function signup(data: unknown) {
         }
         const formObject = Object.fromEntries(data.entries())
         const formValid = signupSchema.safeParse(formObject)
+        console.log(formValid);
         if (!formValid.success) {
             const zodErrors = formValid.error.flatten()
+            const messages = Object.values(zodErrors.fieldErrors)
+                .flat()
+                .join(', ')
             return {
                 success: false,
-                message: zodErrors.fieldErrors,
+                message: messages || 'Invalid data format',
             }
         }
         const validData: SignupSchemaType = formValid.data
