@@ -26,5 +26,19 @@ export async function updateSession(request: NextRequest) {
       },
     }
   )
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  // Routes protégées qui nécessitent une authentification
+  const protectedRoutes = ['/admin', '/user']
+  const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
+
+  // Si l'utilisateur n'est pas connecté et essaie d'accéder à une route protégée
+  if (!user && isProtectedRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
+    return NextResponse.redirect(url)
+  }
+
   return supabaseResponse
 }
