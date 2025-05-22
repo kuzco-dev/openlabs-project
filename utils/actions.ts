@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 
-
 // Login Zod Schema
 const loginSchema = z.object({
   email: z.string().email('Invalid email'),
@@ -27,7 +26,6 @@ Server Action: login form submission.
     - On success: redirects to /admin
     - On failure: returns structured error response
 */
-
 export async function login(data: unknown) {
   try {
     if (!(data instanceof FormData)) {
