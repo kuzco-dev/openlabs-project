@@ -53,7 +53,7 @@ export function SignupForm({
                 <Button type="submit" className="w-full" disabled={pending}>
                 Signup
                 </Button>
-                <p aria-live="polite" className="text-red-500">{state.message}</p>
+                <p aria-live="polite" className="text-red-500">{state?.message}</p>
             </div>
             <div className="text-center text-sm">
                 Already have an account?{" "}

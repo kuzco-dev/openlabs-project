@@ -2,43 +2,65 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+    let supabaseResponse = NextResponse.next({
+        request,
+    })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+        cookies: {
+            getAll() {
+            return request.cookies.getAll()
+            },
+            setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+            supabaseResponse = NextResponse.next({
+                request,
+            })
+            cookiesToSet.forEach(({ name, value, options }) =>
+                supabaseResponse.cookies.set(name, value, options)
+            )
+            },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
+        }
+    )
+
+    const { data: { user } } = await supabase.auth.getUser()
+    const pathname = request.nextUrl.pathname
+
+    if (!user) {
+    // Si non connecté → autoriser uniquement / et /signup
+    if (pathname !== '/' && pathname !== '/signup') {
+        return NextResponse.redirect(new URL('/', request.url))
     }
-  )
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  // Routes protégées qui nécessitent une authentification
-  const protectedRoutes = ['/admin', '/user']
-  const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
+    return supabaseResponse
+    }
 
-  // Si l'utilisateur n'est pas connecté et essaie d'accéder à une route protégée
-  if (!user && isProtectedRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    return NextResponse.redirect(url)
-  }
+    // Connecté → récupérer le rôle
+    const { data: roleData } = await supabase
+    .from('roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .single()
 
-  return supabaseResponse
+    const role = roleData?.role
+
+    // Redirection si connecté mais sur / ou /signup
+    if (pathname === '/' || pathname === '/signup') {
+    const redirectPath = role === 'admin' ? '/admin' : '/user'
+    return NextResponse.redirect(new URL(redirectPath, request.url))
+    }
+
+    // Protection de route
+    if (pathname.startsWith('/admin') && role !== 'admin') {
+        return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    if (pathname.startsWith('/user') && role !== 'user') {
+    return NextResponse.redirect(new URL('/', request.url))
+    }
+    
+    return supabaseResponse
 }

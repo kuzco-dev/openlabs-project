@@ -1,11 +1,16 @@
+
+import AdminSidebar from '@/components/admin-sidebar'
+
 export default function AdminLayout({
-    children,
+  children,
 }: Readonly<{
-    children: React.ReactNode;
+  children: React.ReactNode
 }>) {
-    return (
-        <div>
-            <main>{children}</main> 
-        </div>
-    );
+
+  return (
+    <div>
+        <AdminSidebar />
+        {children}
+    </div>
+  )
 }
