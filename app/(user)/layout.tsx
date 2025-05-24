@@ -1,11 +1,16 @@
+
+import UserHeader from '@/components/user-header'
+
 export default function UserLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
+
   return (
     <div>
-      <main className="flex-grow">{children}</main>
+        <UserHeader />
+        {children}
     </div>
-  );
+  )
 }
