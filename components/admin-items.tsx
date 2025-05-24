@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from "react"
+import AdminItemForm from "@/components/admin-item-form"
 
 interface Item {
   id: string
@@ -32,6 +33,9 @@ export default function AdminItems({
     <div>
       <h2>Items for Catalog: {catalogId}</h2>
       <p>Institution ID: {institutionId}</p>
+      <div>
+        <AdminItemForm catalogId={catalogId}/>
+      </div>
 
       <ul className="mt-4 space-y-2">
         {items.length === 0 ? (

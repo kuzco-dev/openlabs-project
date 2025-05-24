@@ -1,31 +1,19 @@
-
 'use server'
 
-import { z } from 'zod'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
-
-// Login Zod Schema
-const loginSchema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-})
-export type LoginSchemaType = z.infer<typeof loginSchema>
-
-// Signup Zod Schema
-const signupSchema = z.object({
-    email: z.string().email('Invalid email'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
-    role: z.enum(['admin', 'user'], {
-        errorMap: () => ({ message: 'Role must be either admin or student'}),
-    }),
-})
-export type SignupSchemaType = z.infer<typeof signupSchema>
+import { 
+    loginSchema, 
+    LoginSchemaType, 
+    signupSchema,
+    SignupSchemaType, 
+    createItemSchema, 
+    CreateItemSchemaType 
+} from './schemas'
 
 /*
 Server Action: login form submission.
-    - Validates FormData using Zod schema
+    - Validates form using Zod schema
     - Authenticates user via Supabase
     - On success: redirects to /admin
     - On failure: returns structured error response
@@ -41,7 +29,6 @@ export async function login(prevState: any, data: unknown) {
     const formValid = loginSchema.safeParse(formObject)
     if (!formValid.success) {
         const zodErrors = formValid.error.flatten()
-        console.log(zodErrors);
         const messages = Object.values(zodErrors.fieldErrors)
             .flat()
             .join(', ')
@@ -79,7 +66,7 @@ export async function login(prevState: any, data: unknown) {
 
 /*
 Server Action: signup form submission.
-    - Validates FormData using Zod schema
+    - Validates form using Zod schema
     - Registers user via Supabase auth
     - Inserts user role in 'roles' table
     - On success: redirects to /admin
@@ -130,4 +117,105 @@ export async function signup(prevState: any, data: unknown) {
     }
     const redirectPath = validData.role === 'admin' ? '/admin' : '/user'
     redirect(redirectPath)
+}
+
+/*
+Server Action: admin item form submission.
+    - Validates form using Zod schema
+*/
+export async function adminCreateItem(catalogId: string,prevState: any, formData: unknown) {
+
+    if (!(formData instanceof FormData)) {
+      return {
+        success: false,
+        message: 'Invalid data format',
+      }
+    }
+    const formObject = Object.fromEntries(formData.entries())
+    const formResult = createItemSchema.safeParse(formObject)
+    if (!formResult.success) {
+      const zodErrors = formResult.error.flatten()
+      const messages = Object.values(zodErrors.fieldErrors).flat().join(', ')
+      return {
+        success: false,
+        message: messages || 'Invalid input',
+      }
+    }
+    const validData: CreateItemSchemaType = formResult.data
+
+    const supabase = await createClient()
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+  
+    if (userError || !userData?.user?.id) {
+      return {
+        success: false,
+        message: 'Authentication error',
+      }
+    }
+  
+    const { error: supabaseItemsError } = await supabase
+      .from('items')
+      .insert({
+        name: validData.item_name,
+        description: validData.item_description,
+        quantity: Number(validData.item_quantity),
+        catalog_id: catalogId,
+      })
+    if (supabaseItemsError) {
+      return {
+        success: false,
+        message: 'Internal error, try later',
+      }
+    }
+    return {
+      success: true,
+      message: 'Item created successfully',
+    }
+}
+
+/*
+Server Action: User institutions form submission.
+    - Validates form using Zod schema
+*/
+export async function userAddInstitutions(prevState: any, data: unknown) {
+    if (!(data instanceof FormData)) {
+      return {
+        success: false,
+        message: 'Invalid data format',
+      }
+    }
+  
+    const institutionsRaw = data.get('institutions')
+    if (!institutionsRaw || typeof institutionsRaw !== 'string') {
+      return {
+        success: false,
+        message: 'Missing institution data',
+      }
+    }
+  
+    const institutionIds = JSON.parse(institutionsRaw) as string[]
+  
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+  
+    if (!user) {
+      return {
+        success: false,
+        message: 'User not authenticated',
+      }
+    }
+  
+    const insertData = institutionIds.map(institution_id => ({
+      user_id: user.id,
+      institution_id,
+    }))
+  
+    await supabase
+      .from('institution_list')
+      .insert(insertData)
+  
+    return {
+      success: true,
+      message: 'Institutions added successfully',
+    }
 }
