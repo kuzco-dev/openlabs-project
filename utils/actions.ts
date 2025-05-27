@@ -219,3 +219,124 @@ export async function userAddInstitutions(prevState: any, data: unknown) {
       message: 'Institutions added successfully',
     }
 }
+
+type OrderItem = {
+  item_id: string
+  quantity: number
+}
+
+export async function userCreateOrder(catalogId: string, items: OrderItem[]) {
+  const supabase = await createClient()
+  
+  // Get the current user
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  
+  if (userError || !user) {
+    return {
+      success: false,
+      message: 'Utilisateur non authentifié'
+    }
+  }
+
+  // Vérifier les quantités disponibles
+  const { data: availableItems, error: itemsError } = await supabase
+    .from('items')
+    .select('id, actual_quantity')
+    .in('id', items.map(item => item.item_id))
+
+  if (itemsError) {
+    return {
+      success: false,
+      message: 'Erreur lors de la vérification des quantités'
+    }
+  }
+
+  // Vérifier que toutes les quantités sont disponibles
+  for (const item of items) {
+    const availableItem = availableItems.find(i => i.id === item.item_id)
+    if (!availableItem || availableItem.actual_quantity < item.quantity) {
+      return {
+        success: false,
+        message: 'Quantité insuffisante pour certains items'
+      }
+    }
+  }
+
+  // Start a transaction
+  const { data: order, error: orderError } = await supabase
+    .from('orders')
+    .insert({
+      status: false, // false = pending
+      catalog_id: catalogId,
+      user_id: user.id
+    })
+    .select()
+    .single()
+
+  if (orderError || !order) {
+    return {
+      success: false,
+      message: 'Erreur lors de la création de la commande'
+    }
+  }
+
+  // Insert order items
+  const orderItems = items.map(item => ({
+    order_id: order.id,
+    item_id: item.item_id,
+    quantity: item.quantity
+  }))
+
+  const { error: orderItemsError } = await supabase
+    .from('order_items')
+    .insert(orderItems)
+
+  if (orderItemsError) {
+    // If there's an error, we should probably delete the order
+    await supabase
+      .from('orders')
+      .delete()
+      .eq('id', order.id)
+
+    return {
+      success: false,
+      message: 'Erreur lors de l\'ajout des items à la commande'
+    }
+  }
+
+  // Mettre à jour les quantités disponibles
+  for (const item of items) {
+    const availableItem = availableItems.find(i => i.id === item.item_id)
+    if (!availableItem) continue
+
+    const { error: updateError } = await supabase
+      .from('items')
+      .update({ 
+        actual_quantity: availableItem.actual_quantity - item.quantity
+      })
+      .eq('id', item.item_id)
+
+    if (updateError) {
+      // En cas d'erreur, on devrait annuler la commande
+      await supabase
+        .from('orders')
+        .delete()
+        .eq('id', order.id)
+      
+      await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', order.id)
+
+      return {
+        success: false,
+        message: 'Erreur lors de la mise à jour des quantités'
+      }
+    }
+  }
+
+  return {
+    success: true,
+    message: 'Commande créée avec succès'
+  }
+}

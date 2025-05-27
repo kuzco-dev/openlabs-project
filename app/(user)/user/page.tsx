@@ -11,9 +11,11 @@ import {
   CommandEmpty,
   CommandList,
 } from "@/components/ui/command"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, ShoppingCart } from "lucide-react"
 import { cn } from "@/lib/utils"
 import UserItems from "@/components/user-items"
+import UserBag from "@/components/user-bag"
+import { BagProvider } from "@/lib/bag-context"
 
 interface Catalog {
   id: string
@@ -54,106 +56,121 @@ export default function UserCatalogSelector() {
   }
 
   return (
-    <div className="flex flex-col">
-      {/* Institution Picker */}
-      <div className="h-14 p-2 flex items-center gap-4 border-b">
-        <div>
-            <Popover open={openInstitution} onOpenChange={setOpenInstitution}>
-            <PopoverTrigger asChild>
-                <Button
-                variant="outline"
-                role="combobox"
-                className="w-full justify-between"
-                >
-                {selectedInstitution
-                    ? `${selectedInstitution.acronym}`
-                    : "Select institution"}
-                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0">
-                <Command>
-                <CommandInput placeholder="Search institution..." />
-                <CommandList>
-                    <CommandEmpty>No institutions found.</CommandEmpty>
-                    <CommandGroup>
-                    {institutions.map((institution) => (
-                        <CommandItem
-                        key={institution.id}
-                        value={institution.acronym}
-                        onSelect={() => handleInstitutionSelect(institution)}
-                        >
-                        {institution.acronym}
-                        <Check
-                            className={cn(
-                            "ml-auto",
-                            selectedInstitution?.id === institution.id
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                        />
-                        </CommandItem>
-                    ))}
-                    </CommandGroup>
-                </CommandList>
-                </Command>
-            </PopoverContent>
-            </Popover>
-        </div>
-
-        {/* Catalog Picker */}
-        {selectedInstitution && (
+    <BagProvider>
+      <div className="flex flex-col">
+        {/* Institution Picker */}
+        <div className="h-14 p-2 flex items-center justify-between gap-4 border-b">
+          <div className="flex gap-4">
             <div>
-            <Popover open={openCatalog} onOpenChange={setOpenCatalog}>
+              <Popover open={openInstitution} onOpenChange={setOpenInstitution}>
                 <PopoverTrigger asChild>
-                <Button
+                  <Button
                     variant="outline"
                     role="combobox"
-                    className="w-full justify-between"
-                >
-                    {selectedCatalog
-                    ? `${selectedCatalog.acronym}`
-                    : "Select catalog"}
+                    className="w-full justify-between cursor-pointer"
+                  >
+                    {selectedInstitution
+                      ? `${selectedInstitution.acronym}`
+                      : "Select institution"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
-                </Button>
+                  </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0">
-                <Command>
-                    <CommandInput placeholder="Search catalog..." />
+                  <Command>
+                    <CommandInput placeholder="Search institution..." />
                     <CommandList>
-                    <CommandEmpty>No catalogs found.</CommandEmpty>
-                    <CommandGroup>
-                        {selectedInstitution.catalogs.map((catalog) => (
-                        <CommandItem
-                            key={catalog.id}
-                            value={catalog.acronym}
-                            onSelect={() => handleCatalogSelect(catalog)}
-                        >
-                            {catalog.acronym}
+                      <CommandEmpty>No institutions found.</CommandEmpty>
+                      <CommandGroup>
+                        {institutions.map((institution) => (
+                          <CommandItem
+                            key={institution.id}
+                            value={institution.acronym}
+                            onSelect={() => handleInstitutionSelect(institution)}
+                          >
+                            {institution.acronym}
                             <Check
-                            className={cn(
+                              className={cn(
                                 "ml-auto",
-                                selectedCatalog?.id === catalog.id
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
+                                selectedInstitution?.id === institution.id
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
                             />
-                        </CommandItem>
+                          </CommandItem>
                         ))}
-                    </CommandGroup>
+                      </CommandGroup>
                     </CommandList>
-                </Command>
+                  </Command>
                 </PopoverContent>
-            </Popover>
+              </Popover>
             </div>
+
+            {/* Catalog Picker */}
+            {selectedInstitution && (
+              <div>
+                <Popover open={openCatalog} onOpenChange={setOpenCatalog}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between cursor-pointer"
+                    >
+                      {selectedCatalog
+                        ? `${selectedCatalog.acronym}`
+                        : "Select catalog"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Search catalog..." />
+                      <CommandList>
+                        <CommandEmpty>No catalogs found.</CommandEmpty>
+                        <CommandGroup>
+                          {selectedInstitution.catalogs.map((catalog) => (
+                            <CommandItem
+                              key={catalog.id}
+                              value={catalog.acronym}
+                              onSelect={() => handleCatalogSelect(catalog)}
+                            >
+                              {catalog.acronym}
+                              <Check
+                                className={cn(
+                                  "ml-auto",
+                                  selectedCatalog?.id === catalog.id
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="cursor-pointer mx-4">
+                <span>Bag</span>
+                <ShoppingCart className="ml-2" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-96">
+              <UserBag catalogId={selectedCatalog?.id || ''} />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {selectedCatalog && (
+          <div>
+            <UserItems catalogId={selectedCatalog.id} />
+          </div>
         )}
       </div>
-
-      {selectedCatalog && (
-        <div>
-          <UserItems catalogId={selectedCatalog.id} />
-        </div>
-      )}
-    </div>
+    </BagProvider>
   )
 }
