@@ -2,8 +2,6 @@ import { CircleUser, Landmark } from 'lucide-react';
 import Link from 'next/link'
 
 export default function AdminSidebar() {
-
-
     return (
         <header className="flex items-center justify-between border-b bg-white h-14 px-4 gap-3">
             <h1 className="text-xl font-bold">OpenLabs</h1>

@@ -56,7 +56,7 @@ export function BagProvider({ children }: { children: ReactNode }) {
       item_id: item.id,
       quantity: item.quantity
     }))
-
+    
     const result = await userCreateOrder(catalogId, orderItems)
     
     if (result.success) {

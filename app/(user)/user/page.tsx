@@ -159,7 +159,7 @@ export default function UserCatalogSelector() {
                 <ShoppingCart className="ml-2" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-96">
+            <PopoverContent className="w-96" >
               <UserBag catalogId={selectedCatalog?.id || ''} />
             </PopoverContent>
           </Popover>

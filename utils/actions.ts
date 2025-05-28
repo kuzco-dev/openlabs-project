@@ -8,8 +8,14 @@ import {
     signupSchema,
     SignupSchemaType, 
     createItemSchema, 
-    CreateItemSchemaType 
+    CreateItemSchemaType,
+    createCatalogSchema,
+    CreateCatalogSchemaType,
+    createInstitutionSchema,
+    CreateInstitutionSchemaType
 } from './schemas'
+
+import { revalidatePath } from 'next/cache'
 
 /*
 Server Action: login form submission.
@@ -123,8 +129,7 @@ export async function signup(prevState: any, data: unknown) {
 Server Action: admin item form submission.
     - Validates form using Zod schema
 */
-export async function adminCreateItem(catalogId: string,prevState: any, formData: unknown) {
-
+export async function adminCreateItem(catalogId: string, prevState: any, formData: unknown) {
     if (!(formData instanceof FormData)) {
       return {
         success: false,
@@ -153,20 +158,52 @@ export async function adminCreateItem(catalogId: string,prevState: any, formData
       }
     }
   
-    const { error: supabaseItemsError } = await supabase
+    // Create the item first to get its ID
+    const { data: itemData, error: supabaseItemsError } = await supabase
       .from('items')
       .insert({
         name: validData.item_name,
         description: validData.item_description,
-        quantity: Number(validData.item_quantity),
+        default_quantity: Number(validData.item_quantity),
+        actual_quantity: Number(validData.item_quantity),
         catalog_id: catalogId,
       })
-    if (supabaseItemsError) {
+      .select()
+      .single()
+
+    if (supabaseItemsError || !itemData) {
       return {
         success: false,
         message: 'Internal error, try later',
       }
     }
+
+    // If there's an image, upload it
+    if (validData.item_image) {
+      const imageFile = validData.item_image
+      const { error: uploadError } = await supabase
+        .storage
+        .from('items')
+        .upload(`${itemData.id}.jpg`, imageFile, {
+          cacheControl: '3600',
+          upsert: false
+        })
+        console.log(uploadError)
+
+      if (uploadError) {
+        // If image upload fails, delete the item
+        await supabase
+          .from('items')
+          .delete()
+          .eq('id', itemData.id)
+
+        return {
+          success: false,
+          message: 'Error uploading image',
+        }
+      }
+    }
+    
     return {
       success: true,
       message: 'Item created successfully',
@@ -339,4 +376,119 @@ export async function userCreateOrder(catalogId: string, items: OrderItem[]) {
     success: true,
     message: 'Commande créée avec succès'
   }
+}
+
+/*
+Server Action: admin catalog creation.
+    - Validates form using Zod schema
+    - Creates catalog in Supabase
+*/
+export async function adminCreateCatalog(institutionId: string, prevState: any, data: unknown) {
+    console.log(institutionId)
+    console.log(prevState)
+    console.log(data)
+
+    // Authentification check
+    const supabase = await createClient()
+    const { data: supabaseUserData, error: supabaseUserError } = await supabase.auth.getUser()
+    if (supabaseUserError || !supabaseUserData) {
+        return {
+        success: false,
+        message: "Unauthenticated user"
+        }
+    }
+
+    // Data check
+    if (!(data instanceof FormData)) {
+        return {
+          success: false,
+          message: 'Invalid data format',
+        }
+    }
+    const dataObject = Object.fromEntries(data.entries())
+    const dataResult = createCatalogSchema.safeParse(dataObject)
+    if (!dataResult.success) {
+        const zodErrors = dataResult.error.flatten()
+        const messages = Object.values(zodErrors.fieldErrors).flat().join(', ')
+        return {
+            success: false,
+            message: messages || 'Invalid input',
+        }
+    }
+    const dataValid: CreateCatalogSchemaType = dataResult.data
+
+    // Insert data
+    const { error: supabaseCatalogError } = await supabase
+    .from('catalogs')
+    .insert({
+        name: dataValid.name,
+        description: dataValid.description,
+        acronym: dataValid.acronym,
+        institution_id: institutionId,
+    })
+    if (supabaseCatalogError) {
+        return {
+            success: false,
+            message: 'Internal error, try later',
+        }
+    }
+
+    return {
+        success: true,
+        message: 'Catalog created successfully',
+    }
+}
+
+export async function adminCreateInstitution(prevState: any, data: unknown){
+
+    // Authentification check
+    const supabase = await createClient()
+    const { data: supabaseUserData, error: supabaseUserError } = await supabase.auth.getUser()
+    if (supabaseUserError || !supabaseUserData) {
+        return {
+            success: false,
+            message: "Unauthenticated user"
+        }
+    }
+
+    // Data check
+    if (!(data instanceof FormData)) {
+        return {
+            success: false,
+            message: 'Invalid data format',
+        }
+    }
+    const dataObject = Object.fromEntries(data.entries())
+    const dataResult = createInstitutionSchema.safeParse(dataObject)
+    if (!dataResult.success) {
+        const zodErrors = dataResult.error.flatten()
+        const messages = Object.values(zodErrors.fieldErrors).flat().join(', ')
+        return {
+            success: false,
+            message: messages || 'Invalid input',
+        }
+    }
+    const dataValid: CreateInstitutionSchemaType = dataResult.data
+
+    // Insert data
+    const { error: supabaseCatalogError } = await supabase
+    .from('institutions')
+    .insert({
+        name: dataValid.name,
+        description: dataValid.description,
+        acronym: dataValid.acronym,
+        creator_id: supabaseUserData.user.id,
+    })
+    if (supabaseCatalogError) {
+        return {
+            success: false,
+            message: 'Internal error, try later',
+        }
+    }
+
+    revalidatePath('/admin', 'layout')
+    return {
+        success: true,
+        message: 'Catalog created successfully',
+    }
 }

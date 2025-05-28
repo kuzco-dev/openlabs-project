@@ -26,7 +26,7 @@ export default function UserBag({ catalogId }: UserBagProps) {
 
   if (items.length === 0) {
     return (
-      <div className="p-4">
+      <div className="p-0">
         <h2 className="text-2xl font-bold mb-4">Votre panier</h2>
         <p>Votre panier est vide</p>
       </div>
@@ -34,7 +34,7 @@ export default function UserBag({ catalogId }: UserBagProps) {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-0">
       <h2 className="text-2xl font-bold mb-4">Votre panier</h2>
       <div className="grid gap-4">
         {items.map((item) => (

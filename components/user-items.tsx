@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useBag } from '@/lib/bag-context'
+import Image from 'next/image'
+import { Search } from 'lucide-react'
 
 type Item = {
   id: string
@@ -13,6 +15,7 @@ type Item = {
   actual_quantity: number
   created_at: string
   catalog_id: string
+  image_url: string
 }
 
 type UserItemsProps = {
@@ -21,9 +24,12 @@ type UserItemsProps = {
 
 export default function UserItems({ catalogId }: UserItemsProps) {
   const [items, setItems] = useState<Item[]>([])
+  const [filteredItems, setFilteredItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({})
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = useState('')
   const { addItem, items: bagItems } = useBag()
 
   useEffect(() => {
@@ -44,10 +50,11 @@ export default function UserItems({ catalogId }: UserItemsProps) {
       })
       .then((data: Item[]) => {
         setItems(data)
+        setFilteredItems(data)
         // Initialize quantities with default values
         const initialQuantities = data.reduce((acc, item) => ({
           ...acc,
-          [item.id]: Math.min(item.default_quantity, item.actual_quantity)
+          [item.id]: 1
         }), {})
         setQuantities(initialQuantities)
       })
@@ -58,6 +65,13 @@ export default function UserItems({ catalogId }: UserItemsProps) {
         setLoading(false)
       })
   }, [catalogId])
+
+  useEffect(() => {
+    const filtered = items.filter(item =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    setFilteredItems(filtered)
+  }, [searchQuery, items])
 
   const handleQuantityChange = (itemId: string, value: string) => {
     const item = items.find(i => i.id === itemId)
@@ -88,24 +102,57 @@ export default function UserItems({ catalogId }: UserItemsProps) {
     }
   }
 
+  const handleImageError = (itemId: string) => {
+    setFailedImages(prev => new Set([...prev, itemId]))
+  }
+
   if (loading) return <p>Chargement des items...</p>
   if (error) return <p>Erreur : {error}</p>
   if (items.length === 0) return <p>Aucun item trouvé pour ce catalogue.</p>
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Items du catalogue</h2>
-      <div className="grid gap-4">
-        {items.map((item) => {
-          const bagQuantity = bagItems.find(i => i.id === item.id)?.quantity || 0
-          const availableQuantity = item.actual_quantity - bagQuantity
+      <div className="flex items-center mb-6">
+        <div className="relative w-64">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            type="text"
+            placeholder="Rechercher un item..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+      </div>
+      {filteredItems.length === 0 ? (
+        <p className="text-center text-gray-500">Aucun item ne correspond à votre recherche</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filteredItems.map((item) => {
+            const bagQuantity = bagItems.find(i => i.id === item.id)?.quantity || 0
+            const availableQuantity = item.actual_quantity - bagQuantity
+            const hasImageFailed = failedImages.has(item.id)
 
-          return (
-            <div key={item.id} className="border p-4 rounded-lg">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-semibold">{item.name}</h3>
-                  <div className="text-sm text-gray-600">
+            return (
+              <div key={item.id} className="border rounded-lg overflow-hidden flex flex-col">
+                <div className="relative w-full aspect-square bg-gray-100">
+                  {!hasImageFailed ? (
+                    <Image
+                      src={item.image_url}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      onError={() => handleImageError(item.id)}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      Pas d'image
+                    </div>
+                  )}
+                </div>
+                <div className="p-4 flex flex-col flex-grow">
+                  <h3 className="text-lg font-semibold mb-2">{item.name}</h3>
+                  <div className="text-sm text-gray-600 mb-4">
                     Quantité disponible : {availableQuantity}
                     {bagQuantity > 0 && (
                       <span className="ml-2 text-blue-600">
@@ -113,28 +160,31 @@ export default function UserItems({ catalogId }: UserItemsProps) {
                       </span>
                     )}
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min="0"
-                    max={availableQuantity}
-                    value={quantities[item.id] || 0}
-                    onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-                    className="w-20"
-                  />
-                  <Button
-                    onClick={() => handleAddToBag(item)}
-                    disabled={!quantities[item.id] || quantities[item.id] <= 0 || quantities[item.id] > availableQuantity}
-                  >
-                    Ajouter
-                  </Button>
+                  <div className="mt-auto">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        max={availableQuantity}
+                        value={quantities[item.id] || 0}
+                        onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                        className="w-20"
+                      />
+                      <Button
+                        onClick={() => handleAddToBag(item)}
+                        disabled={!quantities[item.id] || quantities[item.id] <= 0 || quantities[item.id] > availableQuantity}
+                        className='cursor-pointer flex-grow'
+                      >
+                        Ajouter
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

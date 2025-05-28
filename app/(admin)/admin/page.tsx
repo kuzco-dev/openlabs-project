@@ -14,18 +14,14 @@ import {
 } from "@/components/ui/command"
 
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
 
 import { Button } from "@/components/ui/button"
+
+import AdminInstitutionForm from "@/components/admin-institution-form"
 
 interface Institution {
     id: string
@@ -35,6 +31,7 @@ interface Institution {
 
 export default function Page() {
     const [institutions, setInstitutions] = useState<Institution[]>([])
+    const [catalogFormOpen, setCatalogFormOpen] = useState(false)
     const router = useRouter()
 
     useEffect(() => {
@@ -54,24 +51,20 @@ export default function Page() {
     return (
         <main className="flex justify-center mt-20 ">
             <div className="flex flex-col justify-center w-full max-w-[70%] space-y-4">
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full cursor-pointer">Create institution</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete your
-                                account and remove your data from our servers.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction>Continue</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                <div>
+                    <Popover open={catalogFormOpen} onOpenChange={setCatalogFormOpen}>
+                        <PopoverTrigger asChild>
+                            <Button className="flex cursor-pointer w-full" variant="outline">
+                                <span>Create institution</span>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent>
+                            <div>
+                                <AdminInstitutionForm />
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                </div>
                 {/* Command avec scroll */}
                 <Command className="w-full">
                     <CommandInput placeholder="Search institution..." />

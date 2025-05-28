@@ -31,5 +31,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(items)
+  // Ajouter l'URL de l'image pour chaque item
+  const itemsWithImages = items.map(item => ({
+    ...item,
+    image_url: `https://nlksqlrtcnecvdzrgmyd.supabase.co/storage/v1/object/public/items/${item.id}.jpg`
+  }))
+
+  return NextResponse.json(itemsWithImages)
 }
