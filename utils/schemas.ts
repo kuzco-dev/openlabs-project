@@ -41,8 +41,8 @@ export type CreateCatalogSchemaType = z.infer<typeof createCatalogSchema>
 
 // Institution Schema
 export const createInstitutionSchema = z.object({
-    name: z.string().max(30, 'Name must be at most 30 characters'),
-    description: z.string().max(40, 'Description must be at most 40 characters'),
+    name: z.string().max(100, 'Name must be at most 100 characters'),
+    description: z.string().max(120, 'Description must be at most 120 characters'),
     acronym: z.string().max(10, 'Acronym must be at most 10 characters'),
 })
 

@@ -125,6 +125,12 @@ export async function signup(prevState: any, data: unknown) {
     redirect(redirectPath)
 }
 
+export async function signout() {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signOut()
+    redirect("/");
+}
+
 /*
 Server Action: admin item form submission.
     - Validates form using Zod schema
@@ -262,7 +268,7 @@ type OrderItem = {
   quantity: number
 }
 
-export async function userCreateOrder(catalogId: string, items: OrderItem[]) {
+export async function userCreateOrder(catalogId: string, items: OrderItem[], returnDate: string) {
   const supabase = await createClient()
   
   // Get the current user
@@ -305,7 +311,8 @@ export async function userCreateOrder(catalogId: string, items: OrderItem[]) {
     .insert({
       status: false, // false = pending
       catalog_id: catalogId,
-      user_id: user.id
+      user_id: user.id,
+      end_date: returnDate
     })
     .select()
     .single()
@@ -490,5 +497,281 @@ export async function adminCreateInstitution(prevState: any, data: unknown){
     return {
         success: true,
         message: 'Catalog created successfully',
+    }
+}
+
+export async function adminModifyInstitution(institutionId: string, prevState: any, data: unknown) {
+    // Authentification check
+    const supabase = await createClient()
+    const { data: supabaseUserData, error: supabaseUserError } = await supabase.auth.getUser()
+    if (supabaseUserError || !supabaseUserData) {
+        return {
+            success: false,
+            message: "Unauthenticated user"
+        }
+    }
+
+    // Data check
+    if (!(data instanceof FormData)) {
+        return {
+            success: false,
+            message: 'Invalid data format',
+        }
+    }
+    const dataObject = Object.fromEntries(data.entries())
+    const dataResult = createInstitutionSchema.safeParse(dataObject)
+    if (!dataResult.success) {
+        const zodErrors = dataResult.error.flatten()
+        const messages = Object.values(zodErrors.fieldErrors).flat().join(', ')
+        return {
+            success: false,
+            message: messages || 'Invalid input',
+        }
+    }
+    const dataValid: CreateInstitutionSchemaType = dataResult.data
+
+    // Update data
+    const { error: updateError } = await supabase
+        .from('institutions')
+        .update({
+            name: dataValid.name,
+            description: dataValid.description,
+            acronym: dataValid.acronym,
+        })
+        .eq('id', institutionId)
+
+    if (updateError) {
+        return {
+            success: false,
+            message: 'Internal error, try later',
+        }
+    }
+
+    revalidatePath('/admin', 'layout')
+    return {
+        success: true,
+        message: 'Institution updated successfully',
+    }
+}
+
+export async function adminModifyCatalog(catalogId: string, prevState: any, data: unknown) {
+    // Authentification check
+    const supabase = await createClient()
+    const { data: supabaseUserData, error: supabaseUserError } = await supabase.auth.getUser()
+    if (supabaseUserError || !supabaseUserData) {
+        return {
+            success: false,
+            message: "Unauthenticated user"
+        }
+    }
+
+    // Data check
+    if (!(data instanceof FormData)) {
+        return {
+            success: false,
+            message: 'Invalid data format',
+        }
+    }
+    const dataObject = Object.fromEntries(data.entries())
+    const dataResult = createCatalogSchema.safeParse(dataObject)
+    if (!dataResult.success) {
+        const zodErrors = dataResult.error.flatten()
+        const messages = Object.values(zodErrors.fieldErrors).flat().join(', ')
+        return {
+            success: false,
+            message: messages || 'Invalid input',
+        }
+    }
+    const dataValid: CreateCatalogSchemaType = dataResult.data
+
+    // Update data
+    const { error: updateError } = await supabase
+        .from('catalogs')
+        .update({
+            name: dataValid.name,
+            description: dataValid.description,
+            acronym: dataValid.acronym,
+        })
+        .eq('id', catalogId)
+
+    if (updateError) {
+        return {
+            success: false,
+            message: 'Internal error, try later',
+        }
+    }
+
+    revalidatePath('/admin', 'layout')
+    return {
+        success: true,
+        message: 'Catalog updated successfully',
+    }
+}
+
+export async function adminDeleteCatalog(catalogId: string) {
+    // Authentification check
+    const supabase = await createClient()
+    const { data: supabaseUserData, error: supabaseUserError } = await supabase.auth.getUser()
+    if (supabaseUserError || !supabaseUserData) {
+        return {
+            success: false,
+            message: "Unauthenticated user"
+        }
+    }
+
+    // Delete the catalog
+    const { error: deleteError } = await supabase
+        .from('catalogs')
+        .delete()
+        .eq('id', catalogId)
+
+    if (deleteError) {
+        return {
+            success: false,
+            message: 'Error deleting catalog'
+        }
+    }
+
+    revalidatePath('/admin', 'layout')
+    return {
+        success: true,
+        message: 'Catalog deleted successfully'
+    }
+}
+
+export async function adminDeleteInstitution(institutionId: string) {
+    // Authentification check
+    const supabase = await createClient()
+    const { data: supabaseUserData, error: supabaseUserError } = await supabase.auth.getUser()
+    if (supabaseUserError || !supabaseUserData) {
+        return {
+            success: false,
+            message: "Unauthenticated user"
+        }
+    }
+
+    // Delete the institution
+    const { error: deleteError } = await supabase
+        .from('institutions')
+        .delete()
+        .eq('id', institutionId)
+
+    if (deleteError) {
+        return {
+            success: false,
+            message: 'Error deleting institution'
+        }
+    }
+
+    revalidatePath('/admin', 'layout')
+    return {
+        success: true,
+        message: 'Institution deleted successfully'
+    }
+}
+
+export async function userUpdateOrderReturnDate(orderId: string, returnDate: string) {
+    const supabase = await createClient()
+    
+    // Vérifier l'authentification
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+        return {
+            success: false,
+            message: 'Utilisateur non authentifié'
+        }
+    }
+
+    // Vérifier que la commande appartient bien à l'utilisateur
+    const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('user_id, status')
+        .eq('id', orderId)
+        .single()
+
+    if (orderError || !order || order.user_id !== user.id) {
+        return {
+            success: false,
+            message: 'Commande non trouvée ou non autorisée'
+        }
+    }
+
+    // Vérifier que la commande n'est pas terminée
+    if (order.status) {
+        return {
+            success: false,
+            message: 'Impossible de modifier une commande terminée'
+        }
+    }
+
+    // Mettre à jour la date de retour
+    const { error: updateError } = await supabase
+        .from('orders')
+        .update({ end_date: returnDate })
+        .eq('id', orderId)
+
+    if (updateError) {
+        return {
+            success: false,
+            message: 'Erreur lors de la mise à jour de la date de retour'
+        }
+    }
+
+    return {
+        success: true,
+        message: 'Date de retour mise à jour avec succès'
+    }
+}
+
+export async function userFinalizeOrder(orderId: string) {
+    const supabase = await createClient()
+    
+    // Vérifier l'authentification
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+        return {
+            success: false,
+            message: 'Utilisateur non authentifié'
+        }
+    }
+
+    // Vérifier que la commande appartient bien à l'utilisateur
+    const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('user_id, status')
+        .eq('id', orderId)
+        .single()
+
+    if (orderError || !order || order.user_id !== user.id) {
+        return {
+            success: false,
+            message: 'Commande non trouvée ou non autorisée'
+        }
+    }
+
+    // Vérifier que la commande n'est pas déjà terminée
+    if (order.status) {
+        return {
+            success: false,
+            message: 'La commande est déjà terminée'
+        }
+    }
+
+    // Mettre à jour le statut de la commande
+    const { error: updateError } = await supabase
+        .from('orders')
+        .update({ status: true })
+        .eq('id', orderId)
+
+    if (updateError) {
+        return {
+            success: false,
+            message: 'Erreur lors de la finalisation de la commande'
+        }
+    }
+
+    return {
+        success: true,
+        message: 'Commande finalisée avec succès'
     }
 }

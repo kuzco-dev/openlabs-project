@@ -23,9 +23,9 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 
-// import AdminOverview from "@/components/admin-overview"
 import AdminOrders from "@/components/admin-orders"
 import AdminItems from "@/components/admin-items"
+import AdminSettings from "@/components/admin-settings"
 
 interface Catalog {
     id: string
@@ -60,17 +60,16 @@ export default function Page() {
             })
             .catch(err => console.error("Failed to fetch catalogs", err))
     }, [institutionId])
-
     const renderContent = () => {
         if (!selectedCatalog) {
-            return <div className="text-muted-foreground">Please select a catalog.</div>
+            return <AdminSettings institutionId={institutionId} />
         }
 
         const catalogId = selectedCatalog.id
-
+        
         switch (activeTab) {
-            //case "overview":
-                //return <AdminOverview institutionId={institutionId} catalogId={catalogId} />
+            case "settings":
+                return <AdminSettings institutionId={institutionId} />
             case "orders":
                 return <AdminOrders institutionId={institutionId} catalogId={catalogId} />
             case "items":
@@ -144,7 +143,7 @@ export default function Page() {
                     </Popover>
                 </div>
 
-                {/*<div><button onClick={() => setActiveTab("overview")} className="cursor-pointer">Overview</button></div>*/}
+                <div><button onClick={() => setActiveTab("settings")} className="cursor-pointer">Settings</button></div>
                 <div><button onClick={() => setActiveTab("orders")} className="cursor-pointer">Orders</button></div>
                 <div><button onClick={() => setActiveTab("items")} className="cursor-pointer">Items</button></div>
             </div>

@@ -1,9 +1,10 @@
+import SignoutButton from "@/components/signout-button"
 
 export default function Page() {
 
     return (
-      <div>
-          USER Account page
+      <div className="p-6">
+          <SignoutButton />
       </div>
     )
 }

@@ -13,12 +13,18 @@ export default function UserBag({ catalogId }: UserBagProps) {
   const { items, removeItem, updateQuantity, createOrder } = useBag()
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [returnDate, setReturnDate] = useState('')
 
   const handleCheckout = async () => {
+    if (!returnDate) {
+      setMessage('Veuillez sélectionner une date de retour')
+      return
+    }
+
     setIsLoading(true)
     setMessage(null)
     
-    const result = await createOrder(catalogId)
+    const result = await createOrder(catalogId, returnDate)
     
     setMessage(result.message)
     setIsLoading(false)
@@ -66,17 +72,30 @@ export default function UserBag({ catalogId }: UserBagProps) {
         ))}
       </div>
       
-      {message && (
-        <div className={`mt-4 p-2 rounded ${message.includes('succès') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          {message}
+      <div className="mt-4 space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Date de retour souhaitée
+          </label>
+          <Input
+            type="date"
+            value={returnDate}
+            onChange={(e) => setReturnDate(e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+            className="w-full"
+          />
         </div>
-      )}
-      
-      <div className="mt-4">
+
+        {message && (
+          <div className={`p-2 rounded ${message.includes('succès') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            {message}
+          </div>
+        )}
+        
         <Button 
           className="w-full" 
           onClick={handleCheckout}
-          disabled={isLoading}
+          disabled={isLoading || !returnDate}
         >
           {isLoading ? 'Création de la commande...' : 'Passer la commande'}
         </Button>
