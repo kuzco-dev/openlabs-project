@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 
-
 /**
     * @route   GET /api/admin/catalogs?institution=...
     * @desc    Retrieves all catalogs for a specific institution
@@ -35,8 +34,12 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'Missing institution ID' }, { status: 400 })
     }
 
-    // 3. Retrieve catalogs 
-    const { data: supabaseCatalogsData, error: supabaseCatalogsError } = await supabase.from('catalogs').select('*').eq('institution_id', institutionId)
+    // 3. Retrieve catalogs
+    const { data: supabaseCatalogsData, error: supabaseCatalogsError } = await supabase
+        .from('catalogs')
+        .select('*')
+        .eq('institution_id', institutionId)
+
     if (supabaseCatalogsError) {
         return NextResponse.json({ error: "Internal error" }, { status: 500 })
     }

@@ -1,21 +1,31 @@
 import { createClient } from '@/utils/supabase/server'
 import { NextResponse } from 'next/server'
 
+/**
+    * @route   GET /api/user/orders
+    * @desc    Retrieves all orders for the authenticated user
+    * @access  Private - user role required
+    *
+    * @returns {200} Returns the list of orders with their details
+    * @returns {401} Not authorized
+    * @returns {500} Internal server error
+*/
+
 export async function GET() {
     try {
+        // 1. Verify user and role
         const supabase = await createClient()
-
-        // Vérifier l'authentification
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
-        if (userError || !user) {
-            return NextResponse.json(
-                { error: 'Non authentifié' },
-                { status: 401 }
-            )
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
+        }
+        const { data: supabaseRolesData, error: supabaseRolesError } = await supabase.from('roles').select('role').eq('user_id', user.id).maybeSingle()
+        if (supabaseRolesData?.role != 'user' || supabaseRolesError) {
+            return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
         }
 
-        // Récupérer les commandes de l'utilisateur avec les détails des items
-        const { data: orders, error: ordersError } = await supabase
+        // 2. Retrieve orders
+        const { data: supabaseOrdersData, error: supabaseOrdersError } = await supabase
             .from('orders')
             .select(`
                 id,
@@ -38,18 +48,18 @@ export async function GET() {
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
 
-        if (ordersError) {
+        if (supabaseOrdersError) {
             return NextResponse.json(
-                { error: 'Erreur lors de la récupération des commandes' },
+                { error: 'Internal error' },
                 { status: 500 }
             )
         }
 
-        return NextResponse.json(orders)
+        // 3. Return response
+        return NextResponse.json(supabaseOrdersData)
     } catch (error) {
-        console.error('Error in GET /api/user/orders:', error)
         return NextResponse.json(
-            { error: 'Erreur interne du serveur' },
+            { error: 'Internal error' },
             { status: 500 }
         )
     }

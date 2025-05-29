@@ -1,6 +1,8 @@
 declare namespace API {
   interface Response<T = any> {
     data: T;
-    status: number;
+    init?: {
+      status: number;
+    };
   }
 } 

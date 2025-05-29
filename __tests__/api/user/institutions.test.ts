@@ -7,7 +7,7 @@ jest.mock('@/utils/supabase/server', () => ({
   createClient: jest.fn(),
 }));
 
-describe('GET /api/user/all', () => {
+describe('GET /api/user/institutions', () => {
   let mockSupabase: any;
 
   beforeEach(() => {
@@ -50,4 +50,5 @@ describe('GET /api/user/all', () => {
     expect(response.data).toEqual({ error: 'Not authorized' });
     expect(response.status).toBe(401);
   });
+
 });
