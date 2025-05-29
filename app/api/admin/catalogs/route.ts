@@ -17,15 +17,15 @@ import { createClient } from '@/utils/supabase/server'
 
 export async function GET(req: Request) {
 
-    // 1. Verify user and roles
+    // 1. Verify user and role
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-        return NextResponse.json({ error: 'Not authorized ' }, { status: 401 })
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
     }
     const { data: supabaseRolesData, error: supabaseRolesError } = await supabase.from('roles').select('role').eq('user_id', user.id).maybeSingle()
     if (supabaseRolesData?.role != 'admin' || supabaseRolesError) {
-        return NextResponse.json({ error: 'Not authorized ' }, { status: 401 })
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
     }
 
     // 2. Verify params
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'Missing institution ID' }, { status: 400 })
     }
 
-    // 3. Get catalogs 
+    // 3. Retrieve catalogs 
     const { data: supabaseCatalogsData, error: supabaseCatalogsError } = await supabase.from('catalogs').select('*').eq('institution_id', institutionId)
     if (supabaseCatalogsError) {
         return NextResponse.json({ error: "Internal error" }, { status: 500 })
