@@ -8,6 +8,7 @@ jest.mock('next/server', () => ({
     json: (data, init) => ({
       data,
       init,
+      status: init?.status,
     }),
   },
 })); 

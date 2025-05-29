@@ -1,24 +1,46 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 
+
+/**
+    * @route   GET /api/admin/catalogs?institution=...
+    * @desc    Retrieves all catalogs for a specific institution
+    * @access  Private - admin role required
+    *
+    * @query   {string} institution - ID of the institution
+    *
+    * @returns {200} Returns the list of catalogs
+    * @returns {400} Missing institution ID
+    * @returns {401} Not authorized
+    * @returns {500} Internal server error
+*/
+
 export async function GET(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-  }
-  const { searchParams } = new URL(req.url)
-  const institutionId = searchParams.get('institution')
-  if (!institutionId) {
-    return NextResponse.json({ error: 'ID de l’institution manquant' }, { status: 400 })
-  }
-  const { data: catalogs, error } = await supabase
-    .from('catalogs')
-    .select('*')
-    .eq('institution_id', institutionId)
-  if (error) {
-    console.error(error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-  return NextResponse.json(catalogs)
+
+    // 1. Verify user and roles
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        return NextResponse.json({ error: 'Not authorized ' }, { status: 401 })
+    }
+    const { data: supabaseRolesData, error: supabaseRolesError } = await supabase.from('roles').select('role').eq('user_id', user.id).maybeSingle()
+    if (supabaseRolesData?.role != 'admin' || supabaseRolesError) {
+        return NextResponse.json({ error: 'Not authorized ' }, { status: 401 })
+    }
+
+    // 2. Verify params
+    const { searchParams } = new URL(req.url)
+    const institutionId = searchParams.get('institution')
+    if (!institutionId) {
+        return NextResponse.json({ error: 'Missing institution ID' }, { status: 400 })
+    }
+
+    // 3. Get catalogs 
+    const { data: supabaseCatalogsData, error: supabaseCatalogsError } = await supabase.from('catalogs').select('*').eq('institution_id', institutionId)
+    if (supabaseCatalogsError) {
+        return NextResponse.json({ error: "Internal error" }, { status: 500 })
+    }
+
+    // 4. Return response
+    return NextResponse.json(supabaseCatalogsData)
 }
