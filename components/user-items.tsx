@@ -106,9 +106,9 @@ export default function UserItems({ catalogId }: UserItemsProps) {
     setFailedImages(prev => new Set([...prev, itemId]))
   }
 
-  if (loading) return <p>Chargement des items...</p>
-  if (error) return <p>Erreur : {error}</p>
-  if (items.length === 0) return <p>Aucun item trouvé pour ce catalogue.</p>
+  if (loading) return <p>Loading items...</p>
+  if (error) return <p>Error : {error}</p>
+  if (items.length === 0) return <p>No items found for this catalog.</p>
 
   return (
     <div className="p-4">
@@ -117,7 +117,7 @@ export default function UserItems({ catalogId }: UserItemsProps) {
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
           <Input
             type="text"
-            placeholder="Rechercher un item..."
+            placeholder="Search for an item..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8"
@@ -125,7 +125,7 @@ export default function UserItems({ catalogId }: UserItemsProps) {
         </div>
       </div>
       {filteredItems.length === 0 ? (
-        <p className="text-center text-gray-500">Aucun item ne correspond à votre recherche</p>
+        <p className="text-center text-gray-500">No items match your search</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredItems.map((item) => {
@@ -153,10 +153,10 @@ export default function UserItems({ catalogId }: UserItemsProps) {
                 <div className="p-4 flex flex-col flex-grow">
                   <h3 className="text-lg font-semibold mb-2">{item.name}</h3>
                   <div className="text-sm text-gray-600 mb-4">
-                    Quantité disponible : {availableQuantity}
+                    Quantity available : {availableQuantity}
                     {bagQuantity > 0 && (
                       <span className="ml-2 text-blue-600">
-                        (Déjà {bagQuantity} dans le panier)
+                        (Already {bagQuantity} in cart)
                       </span>
                     )}
                   </div>

@@ -22,14 +22,14 @@ export default function AdminOverview({ institutionId, catalogId }: AdminOvervie
         )
 
         if (!res.ok) {
-          throw new Error(`Erreur API: ${res.status}`)
+          throw new Error(`Error API: ${res.status}`)
         }
 
         const data = await res.json()
         setStats(data)
       } catch (err: any) {
         console.error(err)
-        setError(err.message || "Erreur inconnue")
+        setError(err.message || "Error")
       } finally {
         setLoading(false)
       }
@@ -38,8 +38,8 @@ export default function AdminOverview({ institutionId, catalogId }: AdminOvervie
     fetchStats()
   }, [institutionId, catalogId])
 
-  if (loading) return <p>Chargement des statistiques...</p>
-  if (error) return <p>Erreur : {error}</p>
+  if (loading) return <p>Loading overview...</p>
+  if (error) return <p>Error : {error}</p>
 
   return (
     <div>

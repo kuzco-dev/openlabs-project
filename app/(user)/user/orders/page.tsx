@@ -70,7 +70,7 @@ export default function Page() {
     }
 
     const handleFinalizeOrder = async (orderId: string) => {
-        if (!confirm('Êtes-vous sûr de vouloir finaliser cette commande ? Cette action est irréversible.')) {
+        if (!confirm('Are you sure you want to complete this order? This action is irreversible.')) {
             return
         }
 
@@ -121,7 +121,7 @@ export default function Page() {
         return (
             <div className="container mx-auto py-8">
                 <div className="text-center p-8 text-gray-500">
-                    Vous n'avez pas encore de commandes
+                    You have no orders yet
                 </div>
             </div>
         )
@@ -135,25 +135,25 @@ export default function Page() {
                 </div>
             )}
             <div className="space-y-6">
-                <h2 className="text-2xl font-semibold">Mes commandes</h2>
+                <h2 className="text-2xl font-semibold">My orders</h2>
                 <div className="space-y-4">
                     {orders.map((order) => (
                         <div key={order.id} className="border rounded-lg p-4 space-y-4">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h3 className="font-medium">
-                                        Commande du {new Date(order.created_at).toLocaleDateString('fr-FR', {
+                                    Order of the {new Date(order.created_at).toLocaleDateString('fr-FR', {
                                             day: 'numeric',
                                             month: 'long',
                                             year: 'numeric'
                                         })}
                                     </h3>
                                     <p className="text-sm text-gray-600">
-                                        Catalogue : {order.catalog.name} ({order.catalog.acronym})
+                                        Catalog : {order.catalog.name} ({order.catalog.acronym})
                                     </p>
                                     {order.end_date && !editingOrderId && (
                                         <p className="text-sm text-gray-600">
-                                            Date de retour : {new Date(order.end_date).toLocaleDateString('fr-FR', {
+                                            End date : {new Date(order.end_date).toLocaleDateString('fr-FR', {
                                                 day: 'numeric',
                                                 month: 'long',
                                                 year: 'numeric'
@@ -167,7 +167,7 @@ export default function Page() {
                                             ? 'bg-green-100 text-green-800' 
                                             : 'bg-yellow-100 text-yellow-800'
                                     }`}>
-                                        {order.status ? 'Terminé' : 'En cours'}
+                                        {order.status ? 'Finished' : 'In progress'}
                                     </div>
                                     {!order.status && (
                                         <div className="flex gap-2">
@@ -176,7 +176,7 @@ export default function Page() {
                                                 size="sm"
                                                 onClick={() => startEditing(order)}
                                             >
-                                                {order.end_date ? 'Modifier la date' : 'Définir date de retour'}
+                                                {order.end_date ? 'Change the date' : 'Set return date'}
                                             </Button>
                                             <Button
                                                 variant="default"
@@ -184,7 +184,7 @@ export default function Page() {
                                                 onClick={() => handleFinalizeOrder(order.id)}
                                                 disabled={finalizingOrderId === order.id}
                                             >
-                                                {finalizingOrderId === order.id ? 'Finalisation...' : 'Finaliser'}
+                                                {finalizingOrderId === order.id ? 'Finalization...' : 'Finalize'}
                                             </Button>
                                         </div>
                                     )}
@@ -204,7 +204,7 @@ export default function Page() {
                                             onClick={() => handleUpdateReturnDate(order.id)}
                                             disabled={!returnDate}
                                         >
-                                            Valider
+                                            Validate
                                         </Button>
                                         <Button
                                             variant="outline"
@@ -213,14 +213,14 @@ export default function Page() {
                                                 setReturnDate('')
                                             }}
                                         >
-                                            Annuler
+                                            Cancel
                                         </Button>
                                     </div>
                                 </div>
                             )}
                             
                             <div className="border-t pt-4">
-                                <h4 className="font-medium mb-2">Items commandés :</h4>
+                                <h4 className="font-medium mb-2">Items ordered :</h4>
                                 <div className="space-y-2">
                                     {order.order_items.map((item, index) => (
                                         <div key={index} className="flex justify-between items-center text-sm">

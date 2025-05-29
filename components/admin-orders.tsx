@@ -50,27 +50,27 @@ export default function AdminOrders({
     fetchOrders()
   }, [catalogId])
 
-  if (loading) return <p>Chargement des commandes...</p>
-  if (error) return <p className="text-red-500">Erreur : {error}</p>
+  if (loading) return <p>Loading orders...</p>
+  if (error) return <p className="text-red-500">Error : {error}</p>
 
   return (
     <div className="p-2">
       <Table>
-        <TableCaption>Liste des commandes récentes.</TableCaption>
+        <TableCaption>List of recent orders.</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[200px]">Commande ID</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead>Créée le</TableHead>
-            <TableHead>Clôturée le</TableHead>
-            <TableHead>Total items </TableHead>
+            <TableHead className="w-[200px]">Order ID</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Creation date</TableHead>
+            <TableHead>End date</TableHead>
+            <TableHead>Total items</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {orders.map((order) => (
             <TableRow key={order.id}>
               <TableCell className="font-medium">{order.id}</TableCell>
-              <TableCell>{order.status ? "Terminée" : "En cours"}</TableCell>
+              <TableCell>{order.status ? "Completed" : "In progress"}</TableCell>
               <TableCell>{new Date(order.creation_date).toLocaleString()}</TableCell>
               <TableCell>{order.end_date ? new Date(order.end_date).toLocaleString() : "—"}</TableCell>
               <TableCell>{order.n_items}</TableCell>
@@ -80,7 +80,7 @@ export default function AdminOrders({
         <TableFooter>
           <TableRow>
             <TableCell colSpan={4}>Total</TableCell>
-            <TableCell>{orders.length} commande(s)</TableCell>
+            <TableCell>{orders.length} order(s)</TableCell>
           </TableRow>
         </TableFooter>
       </Table>

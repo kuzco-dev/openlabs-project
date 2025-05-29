@@ -33,15 +33,15 @@ export default function UserBag({ catalogId }: UserBagProps) {
   if (items.length === 0) {
     return (
       <div className="p-0">
-        <h2 className="text-2xl font-bold mb-4">Votre panier</h2>
-        <p>Votre panier est vide</p>
+        <h2 className="text-2xl font-bold mb-4">Your cart</h2>
+        <p>Your shopping cart is empty</p>
       </div>
     )
   }
 
   return (
     <div className="p-0">
-      <h2 className="text-2xl font-bold mb-4">Votre panier</h2>
+      <h2 className="text-2xl font-bold mb-4">Your cart</h2>
       <div className="grid gap-4">
         {items.map((item) => (
           <div key={item.id} className="border p-4 rounded-lg">
@@ -75,7 +75,7 @@ export default function UserBag({ catalogId }: UserBagProps) {
       <div className="mt-4 space-y-4">
         <div>
           <label className="block text-sm font-medium mb-2">
-            Date de retour souhaitée
+            End date
           </label>
           <Input
             type="date"
@@ -87,7 +87,7 @@ export default function UserBag({ catalogId }: UserBagProps) {
         </div>
 
         {message && (
-          <div className={`p-2 rounded ${message.includes('succès') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          <div className={`p-2 rounded ${message.includes('success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
             {message}
           </div>
         )}
@@ -97,7 +97,7 @@ export default function UserBag({ catalogId }: UserBagProps) {
           onClick={handleCheckout}
           disabled={isLoading || !returnDate}
         >
-          {isLoading ? 'Création de la commande...' : 'Passer la commande'}
+          {isLoading ? 'Creating the order...' : 'Place the order'}
         </Button>
       </div>
     </div>

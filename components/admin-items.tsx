@@ -62,7 +62,7 @@ export default function AdminItems({
   }, [catalogId])
 
   const handleDelete = async (itemId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet item ?')) return
+    if (!confirm('Are you sure you want to delete this item ?')) return
 
     const supabase = createClient()
     const { error } = await supabase
@@ -131,14 +131,14 @@ export default function AdminItems({
       </div>
       <Separator className="my-6"/>
       <Table>
-        <TableCaption>Liste des items du catalogue</TableCaption>
+        <TableCaption>List of catalog items</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead>Nom</TableHead>
+            <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
-            <TableHead>Quantité par défaut</TableHead>
-            <TableHead>Quantité actuelle</TableHead>
-            <TableHead>Date de création</TableHead>
+            <TableHead>Default quantity</TableHead>
+            <TableHead>Quantity available</TableHead>
+            <TableHead>Creation date</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -146,7 +146,7 @@ export default function AdminItems({
           {items.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center">
-                Aucun item trouvé.
+                No items found.
               </TableCell>
             </TableRow>
           ) : (
@@ -171,7 +171,7 @@ export default function AdminItems({
                         }}>
                           <div className="space-y-4">
                             <div className="space-y-2">
-                              <label htmlFor="item_name" className="text-sm font-medium">Nom</label>
+                              <label htmlFor="item_name" className="text-sm font-medium">Name</label>
                               <input
                                 id="item_name"
                                 name="item_name"
@@ -191,7 +191,7 @@ export default function AdminItems({
                               />
                             </div>
                             <div className="space-y-2">
-                              <label htmlFor="item_quantity" className="text-sm font-medium">Quantité</label>
+                              <label htmlFor="item_quantity" className="text-sm font-medium">Quantity</label>
                               <input
                                 id="item_quantity"
                                 name="item_quantity"
@@ -203,7 +203,7 @@ export default function AdminItems({
                               />
                             </div>
                             <div className="space-y-2">
-                              <label htmlFor="item_image" className="text-sm font-medium">Nouvelle image (JPEG uniquement)</label>
+                              <label htmlFor="item_image" className="text-sm font-medium">New image (JPEG only)</label>
                               <input
                                 id="item_image"
                                 name="item_image"
@@ -212,7 +212,7 @@ export default function AdminItems({
                                 className="w-full border rounded-md px-3 py-2 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
                               />
                             </div>
-                            <Button type="submit" className="w-full">Modifier</Button>
+                            <Button type="submit" className="w-full">Modifiy</Button>
                           </div>
                         </form>
                       </PopoverContent>
