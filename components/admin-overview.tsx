@@ -27,9 +27,13 @@ export default function AdminOverview({ institutionId, catalogId }: AdminOvervie
 
         const data = await res.json()
         setStats(data)
-      } catch (err: any) {
+        } catch (err) {
         console.error(err)
-        setError(err.message || "Error")
+        if (err instanceof Error) {
+          setError(err.message)
+        } else {
+          setError("An unexpected error occurred.")
+        }
       } finally {
         setLoading(false)
       }

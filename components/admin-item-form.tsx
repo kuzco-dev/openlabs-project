@@ -21,7 +21,7 @@ const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
   const [state, formAction, pending] = useActionState(createItemWithCatalogId, initialState)
 
   const handleSubmit = async (formData: FormData) => {
-    const result = await formAction(formData)
+    //const result = await formAction(formData)
     if (state.success && onSuccess) {
       onSuccess()
     }

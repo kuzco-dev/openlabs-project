@@ -57,7 +57,7 @@ export async function GET() {
 
         // 3. Return response
         return NextResponse.json(supabaseOrdersData)
-    } catch (error) {
+    } catch {
         return NextResponse.json(
             { error: 'Internal error' },
             { status: 500 }

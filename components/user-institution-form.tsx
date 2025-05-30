@@ -45,9 +45,9 @@ export default function UserInstitutionsForm() {
 
   const handleSubmit = async () => {
     const selectedIds = Object.entries(selected)
-      .filter(([_, isChecked]) => isChecked)
+      .filter(([, isChecked]) => isChecked)
       .map(([id]) => id)
-
+  
     const formData = new FormData()
     formData.append('institutions', JSON.stringify(selectedIds))
     await formAction(formData)

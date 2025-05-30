@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/popover"
 import { Pencil, Trash2 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
-import { useRouter } from "next/navigation"
+//import { useRouter } from "next/navigation"
 
 interface Item {
   id: string
@@ -40,12 +40,12 @@ export default function AdminItems({
   catalogId: string
 }) {
   const [items, setItems] = useState<Item[]>([])
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  //, setLoading] = useState(false)
+  //const router = useRouter()
 
   const fetchItems = async () => {
     if (!catalogId) return
-    setLoading(true)
+    //setLoading(true)
     try {
       const res = await fetch(`/api/admin/items?catalog=${catalogId}`)
       const data = await res.json()
@@ -53,7 +53,7 @@ export default function AdminItems({
     } catch (err) {
       console.error('Failed to fetch items:', err)
     } finally {
-      setLoading(false)
+      //setLoading(false)
     }
   }
 
@@ -231,6 +231,7 @@ export default function AdminItems({
           )}
         </TableBody>
       </Table>
+      <div className="hidden">{institutionId}</div>
     </div>
   )
 }

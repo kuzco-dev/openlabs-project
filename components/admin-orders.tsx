@@ -40,8 +40,12 @@ export default function AdminOrders({
         if (!res.ok) throw new Error("Erreur lors du chargement des commandes.")
         const data = await res.json()
         setOrders(data)
-      } catch (err: any) {
-        setError(err.message)
+        } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message)
+        } else {
+          setError("An unexpected error occurred.")
+        }
       } finally {
         setLoading(false)
       }
@@ -84,6 +88,7 @@ export default function AdminOrders({
           </TableRow>
         </TableFooter>
       </Table>
+      <div className="hidden">{institutionId}</div>
     </div>
   )
 }
