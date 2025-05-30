@@ -1,0 +1,46 @@
+'use client'
+
+import { useActionState } from 'react'
+import { adminCreateInstitution } from '@/utils/actions'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+
+const initialState = {
+    success: true,
+    message: '',
+}
+
+const AdminInstitutionForm = () => {
+  const [state, formAction, pending] = useActionState(adminCreateInstitution, initialState)
+
+  return (
+    <form className="flex flex-col gap-1 max-w-md" action={formAction}>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="name">Name</Label>
+        <Input id="name" name="name" type="text" required />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="description">Description</Label>
+        <Input id="description" name="description" type="text" required />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="acronym">Acronyme</Label>
+        <Input id="acronym" name="acronym" type="text" required />
+      </div>
+      <div>
+        <Button type="submit" disabled={pending} className='w-full mt-2 cursor-pointer'>
+            {pending ? 'Creating...' : 'Create Item'}
+        </Button>
+      </div>
+      <div>
+      <p className={`text-sm ${state.success ? 'text-green-600' : 'text-red-500'}`}>
+        {state.message}
+      </p>
+      </div>
+      
+    </form>
+  )
+}
+
+export default AdminInstitutionForm
