@@ -175,7 +175,7 @@ export default function UserItems({ catalogId }: UserItemsProps) {
                         disabled={!quantities[item.id] || quantities[item.id] <= 0 || quantities[item.id] > availableQuantity}
                         className='cursor-pointer flex-grow'
                       >
-                        Ajouter
+                        Add
                       </Button>
                     </div>
                   </div>

@@ -121,6 +121,19 @@ export async function signup(prevState: any, data: unknown) {
             message: 'Internal error, try later'
         }
     }
+    const { error: supabseProfilesError } = await supabase
+    .from('profiles')
+    .insert({
+        user_id: supabaseSignupData?.user?.id,
+        email: validData.email,
+    })
+    if (supabseRolesError) {
+        return {
+            success: false,
+            message: 'Internal error, try later'
+        }
+    }
+    
     const redirectPath = validData.role === 'admin' ? '/admin' : '/user'
     redirect(redirectPath)
 }
@@ -754,6 +767,51 @@ export async function userFinalizeOrder(orderId: string) {
         return {
             success: false,
             message: 'La commande est déjà terminée'
+        }
+    }
+
+    // Récupérer les items de la commande avec leurs quantités
+    const { data: orderItems, error: orderItemsError } = await supabase
+        .from('order_items')
+        .select('item_id, quantity')
+        .eq('order_id', orderId)
+
+    if (orderItemsError) {
+        return {
+            success: false,
+            message: 'Erreur lors de la récupération des items de la commande'
+        }
+    }
+
+    // Mettre à jour les quantités disponibles pour chaque item
+    for (const orderItem of orderItems) {
+        // D'abord récupérer la quantité actuelle
+        const { data: currentItem, error: getItemError } = await supabase
+            .from('items')
+            .select('actual_quantity')
+            .eq('id', orderItem.item_id)
+            .single()
+
+        if (getItemError || !currentItem) {
+            return {
+                success: false,
+                message: 'Erreur lors de la récupération des quantités actuelles'
+            }
+        }
+
+        // Mettre à jour avec la nouvelle quantité
+        const { error: updateError } = await supabase
+            .from('items')
+            .update({ 
+                actual_quantity: currentItem.actual_quantity + orderItem.quantity
+            })
+            .eq('id', orderItem.item_id)
+
+        if (updateError) {
+            return {
+                success: false,
+                message: 'Erreur lors de la mise à jour des quantités'
+            }
         }
     }
 

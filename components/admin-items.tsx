@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import AdminItemForm from "@/components/admin-item-form"
 import {
   Table,
@@ -43,7 +43,7 @@ export default function AdminItems({
   //, setLoading] = useState(false)
   //const router = useRouter()
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     if (!catalogId) return
     //setLoading(true)
     try {
@@ -55,11 +55,11 @@ export default function AdminItems({
     } finally {
       //setLoading(false)
     }
-  }
+  }, [catalogId])
 
   useEffect(() => {
     fetchItems()
-  }, [catalogId])
+  }, [fetchItems])
 
   const handleDelete = async (itemId: string) => {
     if (!confirm('Are you sure you want to delete this item ?')) return

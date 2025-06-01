@@ -167,7 +167,7 @@ export default function Page() {
                                             ? 'bg-green-100 text-green-800' 
                                             : 'bg-yellow-100 text-yellow-800'
                                     }`}>
-                                        {order.status ? 'Finished' : 'In progress'}
+                                        {order.status ? 'Loan completed' : 'Loan in progress'}
                                     </div>
                                     {!order.status && (
                                         <div className="flex gap-2">
@@ -184,7 +184,7 @@ export default function Page() {
                                                 onClick={() => handleFinalizeOrder(order.id)}
                                                 disabled={finalizingOrderId === order.id}
                                             >
-                                                {finalizingOrderId === order.id ? 'Finalization...' : 'Finalize'}
+                                                {finalizingOrderId === order.id ? 'Return...' : 'Return items'}
                                             </Button>
                                         </div>
                                     )}
