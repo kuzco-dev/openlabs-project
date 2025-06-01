@@ -157,8 +157,8 @@ export default function AdminOrders({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All orders</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="in_progress">In progress</SelectItem>
+              <SelectItem value="completed">Returned</SelectItem>
+              <SelectItem value="in_progress">Loan in progress</SelectItem>
             </SelectContent>
           </Select>
 
@@ -311,7 +311,7 @@ export default function AdminOrders({
           {sortedAndFilteredOrders.map((order) => (
             <TableRow key={order.id}>
               <TableCell className="font-medium">{order.id}</TableCell>
-              <TableCell>{order.status ? "Completed" : "In progress"}</TableCell>
+              <TableCell>{order.status ? "Returned" : "Loan in progress"}</TableCell>
               <TableCell>{new Date(order.creation_date).toLocaleString()}</TableCell>
               <TableCell>{order.end_date ? new Date(order.end_date).toLocaleString() : "—"}</TableCell>
               <TableCell>{order.n_items}</TableCell>

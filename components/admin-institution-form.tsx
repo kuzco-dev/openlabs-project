@@ -17,15 +17,15 @@ const AdminInstitutionForm = () => {
   return (
     <form className="flex flex-col gap-1 max-w-md" action={formAction}>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name">Name (max 30 characters)</Label>
         <Input id="name" name="name" type="text" required />
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">Description (max 120 characters)</Label>
         <Input id="description" name="description" type="text" required />
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="acronym">Acronyme</Label>
+        <Label htmlFor="acronym">Acronym (max 10 characters)</Label>
         <Input id="acronym" name="acronym" type="text" required />
       </div>
       <div>
