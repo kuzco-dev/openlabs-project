@@ -84,8 +84,8 @@ export async function GET(req: Request) {
                 n_items: orderItems?.length ?? 0,
                 user_email: profileData?.email || 'N/A',
                 items: orderItems?.map(item => ({
-                    name: item.items.name,
-                    description: item.items.description,
+                    name: item.items[0].name,
+                    description: item.items[0].description,
                     quantity: item.quantity
                 })) || []
             }
