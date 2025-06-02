@@ -40,6 +40,7 @@ const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
   const [errors, setErrors] = useState<FormErrors>({})
   const [formData, setFormData] = useState<FormData | null>(null)
   const [isPending, startTransition] = useTransition()
+  console.log(formData, )
 
   // Optional callback on success
   useEffect(() => {
@@ -66,6 +67,7 @@ const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
         item_quantity: formData.get('item_quantity'),
         item_image: formData.get('item_image'),
       })
+      console.log(validatedData)
 
       // If validation passes, submit the form
       setFormData(formData)
