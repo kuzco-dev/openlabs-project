@@ -21,7 +21,7 @@ export type SignupSchemaType = z.infer<typeof signupSchema>
 // Item Schema
 export const createItemSchema = z.object({
   item_name: z.string().max(30, 'Name must be at most 30 characters'),
-  item_description: z.string().max(120, 'Description must be at most 120 characters'),
+  item_description: z.string().max(60, 'Description must be at most 60 characters'),
   item_quantity: z.coerce.number().min(1, 'Minimum quantity is 1').max(1000, 'Maximum quantity is 1000'),
   item_image: z.instanceof(File).refine((file) => file.type === 'image/jpeg', {
     message: 'Only JPEG images are allowed'

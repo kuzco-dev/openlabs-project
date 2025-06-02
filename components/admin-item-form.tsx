@@ -100,7 +100,7 @@ const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
         )}
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="item_description">Description (max 120 characters)</Label>
+        <Label htmlFor="item_description">Description (max 60 characters)</Label>
         <Input 
           id="item_description" 
           name="item_description" 
