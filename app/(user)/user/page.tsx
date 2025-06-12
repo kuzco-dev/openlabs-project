@@ -59,7 +59,7 @@ export default function UserCatalogSelector() {
     <BagProvider>
       <div className="flex flex-col">
         {/* Institution Picker */}
-        <div className="h-14 p-2 flex items-center justify-between gap-4 border-b">
+        <div className="h-14 p-2 flex items-center justify-between gap-4 border-b overflow-x-auto scrollbar-hide">
           <div className="flex gap-4">
             <div>
               <Popover open={openInstitution} onOpenChange={setOpenInstitution}>

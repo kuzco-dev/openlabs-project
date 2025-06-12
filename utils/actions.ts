@@ -294,6 +294,17 @@ export async function userCreateOrder(catalogId: string, items: OrderItem[], ret
     }
   }
 
+  // Valider la date de retour
+  const selectedDate = new Date(returnDate)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0) // Réinitialiser l'heure à minuit pour la comparaison
+  if (selectedDate < today) {
+    return {
+      success: false,
+      message: 'Return date cannot be earlier than today'
+    }
+  }
+
   // Vérifier les quantités disponibles
   const { data: availableItems, error: itemsError } = await supabase
     .from('items')
@@ -691,7 +702,7 @@ export async function userUpdateOrderReturnDate(orderId: string, returnDate: str
     if (userError || !user) {
         return {
             success: false,
-            message: 'Utilisateur non authentifié'
+            message: 'Unauthenticated user'
         }
     }
 
@@ -705,7 +716,7 @@ export async function userUpdateOrderReturnDate(orderId: string, returnDate: str
     if (orderError || !order || order.user_id !== user.id) {
         return {
             success: false,
-            message: 'Commande non trouvée ou non autorisée'
+            message: 'Order not found or not authorized'
         }
     }
 
@@ -713,7 +724,7 @@ export async function userUpdateOrderReturnDate(orderId: string, returnDate: str
     if (order.status) {
         return {
             success: false,
-            message: 'Impossible de modifier une commande terminée'
+            message: 'Unable to modify a completed order'
         }
     }
 
@@ -726,13 +737,13 @@ export async function userUpdateOrderReturnDate(orderId: string, returnDate: str
     if (updateError) {
         return {
             success: false,
-            message: 'Erreur lors de la mise à jour de la date de retour'
+            message: 'Internal error, try later'
         }
     }
 
     return {
         success: true,
-        message: 'Date de retour mise à jour avec succès'
+        message: 'Return date successfully updated'
     }
 }
 
@@ -744,7 +755,7 @@ export async function userFinalizeOrder(orderId: string) {
     if (userError || !user) {
         return {
             success: false,
-            message: 'Utilisateur non authentifié'
+            message: 'Unauthenticated user'
         }
     }
 
@@ -758,7 +769,7 @@ export async function userFinalizeOrder(orderId: string) {
     if (orderError || !order || order.user_id !== user.id) {
         return {
             success: false,
-            message: 'Commande non trouvée ou non autorisée'
+            message: 'Order not found or not authorized'
         }
     }
 
@@ -766,7 +777,7 @@ export async function userFinalizeOrder(orderId: string) {
     if (order.status) {
         return {
             success: false,
-            message: 'La commande est déjà terminée'
+            message: 'Order already completed'
         }
     }
 
@@ -779,7 +790,7 @@ export async function userFinalizeOrder(orderId: string) {
     if (orderItemsError) {
         return {
             success: false,
-            message: 'Erreur lors de la récupération des items de la commande'
+            message: 'Internal error, try later'
         }
     }
 
@@ -795,7 +806,7 @@ export async function userFinalizeOrder(orderId: string) {
         if (getItemError || !currentItem) {
             return {
                 success: false,
-                message: 'Erreur lors de la récupération des quantités actuelles'
+                message: 'Internal error, try later'
             }
         }
 
@@ -810,7 +821,7 @@ export async function userFinalizeOrder(orderId: string) {
         if (updateError) {
             return {
                 success: false,
-                message: 'Erreur lors de la mise à jour des quantités'
+                message: 'Internal error, try later'
             }
         }
     }
@@ -824,12 +835,12 @@ export async function userFinalizeOrder(orderId: string) {
     if (updateError) {
         return {
             success: false,
-            message: 'Erreur lors de la finalisation de la commande'
+            message: 'Internal error, try later'
         }
     }
 
     return {
         success: true,
-        message: 'Commande finalisée avec succès'
+        message: 'Order finalized successfully'
     }
 }
