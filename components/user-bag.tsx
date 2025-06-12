@@ -33,15 +33,15 @@ export default function UserBag({ catalogId }: UserBagProps) {
   if (items.length === 0) {
     return (
       <div className="p-0">
-        <h2 className="text-2xl font-bold mb-4">Your cart</h2>
-        <p>Your shopping cart is empty</p>
+        <h2 className="text-2xl font-bold mb-4">Your bag</h2>
+        <p>Your bag is empty</p>
       </div>
     )
   }
 
   return (
     <div className="p-0">
-      <h2 className="text-2xl font-bold mb-4">Your cart</h2>
+      <h2 className="text-2xl font-bold mb-4">Your bag</h2>
       <div className="grid gap-4">
         {items.map((item) => (
           <div key={item.id} className="border p-4 rounded-lg">

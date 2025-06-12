@@ -41,19 +41,39 @@ export async function GET(req: Request) {
     .eq('catalog_id', catalogId)
 
     if (supabaseOrdersError) {
+        console.error('Error fetching orders:', supabaseOrdersError)
         return NextResponse.json({ error: "Internal error" }, { status: 500 })
     }
 
-    // 4. Add items in order
+    // 4. Add items in order and user emails
     const enrichedOrders = await Promise.all(
         supabaseOrdersData.map(async (order) => {
-            const { count, error: countError } = await supabase
+            // Get order items
+            const { data: orderItems, error: itemsError } = await supabase
             .from('order_items')
-            .select('*', { count: 'exact', head: true })
+            .select(`
+                quantity,
+                items (
+                    name,
+                    description
+                )
+            `)
             .eq('order_id', order.id)
 
-            if (countError) {
+            if (itemsError) {
+                console.error('Error fetching order items:', itemsError)
                 return NextResponse.json({ error: "Internal error" }, { status: 500 })
+            }
+
+            // Get user email from profiles
+            const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', order.user_id)
+            .single()
+
+            if (profileError) {
+                console.error('Error fetching profile:', profileError)
             }
 
             return {
@@ -61,7 +81,13 @@ export async function GET(req: Request) {
                 status: order.status,
                 creation_date: order.created_at,
                 end_date: order.end_date,
-                n_items: count ?? 0,
+                n_items: orderItems?.length ?? 0,
+                user_email: profileData?.email || 'N/A',
+                items: orderItems?.map(item => ({
+                    name: item.items[0].name,
+                    description: item.items[0].description,
+                    quantity: item.quantity
+                })) || []
             }
         })
     )

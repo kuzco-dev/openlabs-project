@@ -42,7 +42,19 @@ export default function Page() {
                     throw new Error('Erreur lors de la récupération des commandes')
                 }
                 const data = await response.json()
-                setOrders(data)
+                // Trier d'abord par statut (non terminées en premier) puis par end_date
+                const sortedData = data.sort((a: Order, b: Order) => {
+                    // D'abord trier par statut (false/true)
+                    if (a.status !== b.status) {
+                        return a.status ? 1 : -1; // false (en cours) en premier
+                    }
+                    
+                    // Si les deux commandes ont le même statut, trier par end_date
+                    if (!a.end_date) return 1;
+                    if (!b.end_date) return -1;
+                    return new Date(b.end_date).getTime() - new Date(a.end_date).getTime();
+                });
+                setOrders(sortedData)
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Une erreur est survenue')
             } finally {
@@ -152,13 +164,20 @@ export default function Page() {
                                         Catalog : {order.catalog.name} ({order.catalog.acronym})
                                     </p>
                                     {order.end_date && !editingOrderId && (
-                                        <p className="text-sm text-gray-600">
-                                            End date : {new Date(order.end_date).toLocaleDateString('fr-FR', {
-                                                day: 'numeric',
-                                                month: 'long',
-                                                year: 'numeric'
-                                            })}
-                                        </p>
+                                        <div className="space-y-1">
+                                            <p className="text-sm text-gray-600">
+                                                End date : {new Date(order.end_date).toLocaleDateString('fr-FR', {
+                                                    day: 'numeric',
+                                                    month: 'long',
+                                                    year: 'numeric'
+                                                })}
+                                            </p>
+                                            {!order.status && new Date(order.end_date) < new Date() && (
+                                                <p className="text-sm text-red-600 font-medium">
+                                                    The deadline has passed, return the items
+                                                </p>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
@@ -167,7 +186,7 @@ export default function Page() {
                                             ? 'bg-green-100 text-green-800' 
                                             : 'bg-yellow-100 text-yellow-800'
                                     }`}>
-                                        {order.status ? 'Finished' : 'In progress'}
+                                        {order.status ? 'Loan completed' : 'Loan in progress'}
                                     </div>
                                     {!order.status && (
                                         <div className="flex gap-2">
@@ -184,7 +203,7 @@ export default function Page() {
                                                 onClick={() => handleFinalizeOrder(order.id)}
                                                 disabled={finalizingOrderId === order.id}
                                             >
-                                                {finalizingOrderId === order.id ? 'Finalization...' : 'Finalize'}
+                                                {finalizingOrderId === order.id ? 'Return...' : 'Return items'}
                                             </Button>
                                         </div>
                                     )}

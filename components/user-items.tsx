@@ -54,7 +54,7 @@ export default function UserItems({ catalogId }: UserItemsProps) {
         // Initialize quantities with default values
         const initialQuantities = data.reduce((acc, item) => ({
           ...acc,
-          [item.id]: 1
+          [item.id]: 0
         }), {})
         setQuantities(initialQuantities)
       })
@@ -175,7 +175,7 @@ export default function UserItems({ catalogId }: UserItemsProps) {
                         disabled={!quantities[item.id] || quantities[item.id] <= 0 || quantities[item.id] > availableQuantity}
                         className='cursor-pointer flex-grow'
                       >
-                        Ajouter
+                        Add
                       </Button>
                     </div>
                   </div>
