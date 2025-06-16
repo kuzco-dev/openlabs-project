@@ -36,7 +36,6 @@ import { cn } from "@/lib/utils"
 
 interface OrderItem {
   name: string
-  description: string
   quantity: number
 }
 
@@ -78,7 +77,7 @@ export default function AdminOrders({
     const fetchOrders = async () => {
       try {
         const res = await fetch(`/api/admin/orders?catalog=${catalogId}`)
-        if (!res.ok) throw new Error("Erreur lors du chargement des commandes.")
+        if (!res.ok) throw new Error("Error loading orders.")
         const data = await res.json()
         setOrders(data)
         } catch (err) {
@@ -95,10 +94,8 @@ export default function AdminOrders({
     fetchOrders()
   }, [catalogId])
 
-  // Get unique emails from orders
   const uniqueEmails = Array.from(new Set(orders.map(order => order.user_email))).sort()
 
-  // Get unique items from orders
   const uniqueItems = Array.from(
     new Set(
       orders.flatMap(order => 
@@ -108,17 +105,14 @@ export default function AdminOrders({
   ).sort()
 
   const filteredOrders = orders.filter(order => {
-    // First filter by status
     const statusMatch = statusFilter === 'all' 
       ? true 
       : statusFilter === 'completed' 
         ? order.status 
         : !order.status
 
-    // Then filter by email if one is selected
     const emailMatch = selectedEmail ? order.user_email === selectedEmail : true
 
-    // Then filter by item if one is selected
     const itemMatch = selectedItem 
       ? order.items.some(item => item.name === selectedItem)
       : true
@@ -330,7 +324,6 @@ export default function AdminOrders({
                         {order.items.map((item, index) => (
                           <div key={index} className="border-b pb-2">
                             <p className="font-medium">{item.name}</p>
-                            <p className="text-sm text-gray-500">{item.description}</p>
                             <p className="text-sm">Quantity: {item.quantity}</p>
                           </div>
                         ))}

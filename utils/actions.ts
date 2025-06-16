@@ -294,6 +294,17 @@ export async function userCreateOrder(catalogId: string, items: OrderItem[], ret
     }
   }
 
+  // Valider la date de retour
+  const selectedDate = new Date(returnDate)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0) // Réinitialiser l'heure à minuit pour la comparaison
+  if (selectedDate < today) {
+    return {
+      success: false,
+      message: 'Return date cannot be earlier than today'
+    }
+  }
+
   // Vérifier les quantités disponibles
   const { data: availableItems, error: itemsError } = await supabase
     .from('items')
@@ -691,7 +702,7 @@ export async function userUpdateOrderReturnDate(orderId: string, returnDate: str
     if (userError || !user) {
         return {
             success: false,
-            message: 'Utilisateur non authentifié'
+            message: 'Unauthenticated user'
         }
     }
 
@@ -705,7 +716,7 @@ export async function userUpdateOrderReturnDate(orderId: string, returnDate: str
     if (orderError || !order || order.user_id !== user.id) {
         return {
             success: false,
-            message: 'Commande non trouvée ou non autorisée'
+            message: 'Order not found or not authorized'
         }
     }
 
@@ -713,7 +724,7 @@ export async function userUpdateOrderReturnDate(orderId: string, returnDate: str
     if (order.status) {
         return {
             success: false,
-            message: 'Impossible de modifier une commande terminée'
+            message: 'Unable to modify a completed order'
         }
     }
 
@@ -726,13 +737,13 @@ export async function userUpdateOrderReturnDate(orderId: string, returnDate: str
     if (updateError) {
         return {
             success: false,
-            message: 'Erreur lors de la mise à jour de la date de retour'
+            message: 'Internal error, try later'
         }
     }
 
     return {
         success: true,
-        message: 'Date de retour mise à jour avec succès'
+        message: 'Return date successfully updated'
     }
 }
 
@@ -744,7 +755,7 @@ export async function userFinalizeOrder(orderId: string) {
     if (userError || !user) {
         return {
             success: false,
-            message: 'Utilisateur non authentifié'
+            message: 'Unauthenticated user'
         }
     }
 
@@ -758,7 +769,7 @@ export async function userFinalizeOrder(orderId: string) {
     if (orderError || !order || order.user_id !== user.id) {
         return {
             success: false,
-            message: 'Commande non trouvée ou non autorisée'
+            message: 'Order not found or not authorized'
         }
     }
 
@@ -766,7 +777,7 @@ export async function userFinalizeOrder(orderId: string) {
     if (order.status) {
         return {
             success: false,
-            message: 'La commande est déjà terminée'
+            message: 'Order already completed'
         }
     }
 
@@ -779,7 +790,7 @@ export async function userFinalizeOrder(orderId: string) {
     if (orderItemsError) {
         return {
             success: false,
-            message: 'Erreur lors de la récupération des items de la commande'
+            message: 'Internal error, try later'
         }
     }
 
@@ -795,7 +806,7 @@ export async function userFinalizeOrder(orderId: string) {
         if (getItemError || !currentItem) {
             return {
                 success: false,
-                message: 'Erreur lors de la récupération des quantités actuelles'
+                message: 'Internal error, try later'
             }
         }
 
@@ -810,7 +821,7 @@ export async function userFinalizeOrder(orderId: string) {
         if (updateError) {
             return {
                 success: false,
-                message: 'Erreur lors de la mise à jour des quantités'
+                message: 'Internal error, try later'
             }
         }
     }
@@ -824,12 +835,114 @@ export async function userFinalizeOrder(orderId: string) {
     if (updateError) {
         return {
             success: false,
-            message: 'Erreur lors de la finalisation de la commande'
+            message: 'Internal error, try later'
         }
     }
 
     return {
         success: true,
-        message: 'Commande finalisée avec succès'
+        message: 'Order finalized successfully'
+    }
+}
+
+export async function adminAddStudent(institutionId: string, email: string) {
+    const supabase = await createClient()
+    
+    // 1. Verify user and role
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+        return {
+            success: false,
+            message: 'Not authorized'
+        }
+    }
+    const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+    if (roleError || roleData?.role !== 'admin') {
+        return {
+            success: false,
+            message: 'Not authorized'
+        }
+    }
+
+    // 2. Check if student is already in the institution
+    const { data: existingStudent, error: checkError } = await supabase
+        .from('institution_list')
+        .select('id')
+        .eq('institution_id', institutionId)
+        .eq('email', email)
+        .single()
+
+    if (existingStudent) {
+        return {
+            success: false,
+            message: 'Student is already in this institution'
+        }
+    }
+
+    // 3. Add student to institution
+    const { error: insertError } = await supabase
+        .from('institution_list')
+        .insert({
+            institution_id: institutionId,
+            email: email
+        })
+
+    if (insertError) {
+        return {
+            success: false,
+            message: 'Error adding student to institution'
+        }
+    }
+
+    return {
+        success: true,
+        message: 'Student added successfully'
+    }
+}
+
+export async function adminRemoveStudent(institutionId: string, studentId: string) {
+    const supabase = await createClient()
+    
+    // 1. Verify user and role
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+        return {
+            success: false,
+            message: 'Not authorized'
+        }
+    }
+    const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+    if (roleError || roleData?.role !== 'admin') {
+        return {
+            success: false,
+            message: 'Not authorized'
+        }
+    }
+
+    // 2. Remove student from institution
+    const { error: deleteError } = await supabase
+        .from('institution_list')
+        .delete()
+        .eq('id', studentId)
+        .eq('institution_id', institutionId)
+
+    if (deleteError) {
+        return {
+            success: false,
+            message: 'Error removing student from institution'
+        }
+    }
+
+    return {
+        success: true,
+        message: 'Student removed successfully'
     }
 }

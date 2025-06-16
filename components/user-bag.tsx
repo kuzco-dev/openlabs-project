@@ -15,9 +15,28 @@ export default function UserBag({ catalogId }: UserBagProps) {
   const [message, setMessage] = useState<string | null>(null)
   const [returnDate, setReturnDate] = useState('')
 
+  // Fonction pour obtenir la date minimale (aujourd'hui)
+  const getMinDate = () => {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  }
+
+  // Fonction pour valider la date
+  const validateDate = (date: string) => {
+    const selectedDate = new Date(date)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Réinitialiser l'heure à minuit pour la comparaison
+    return selectedDate >= today
+  }
+
   const handleCheckout = async () => {
     if (!returnDate) {
-      setMessage('Veuillez sélectionner une date de retour')
+      setMessage('Please select a return date')
+      return
+    }
+
+    if (!validateDate(returnDate)) {
+      setMessage('Return date cannot be earlier than today')
       return
     }
 
@@ -81,7 +100,7 @@ export default function UserBag({ catalogId }: UserBagProps) {
             type="date"
             value={returnDate}
             onChange={(e) => setReturnDate(e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
+            min={getMinDate()}
             className="w-full"
           />
         </div>

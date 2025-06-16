@@ -34,6 +34,31 @@ export default function Page() {
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
     const [finalizingOrderId, setFinalizingOrderId] = useState<string | null>(null)
 
+    // Fonction pour obtenir la date minimale (aujourd'hui)
+    const getMinDate = () => {
+        const today = new Date()
+        return today.toISOString().split('T')[0]
+    }
+
+    // Fonction pour valider la date
+    const validateDate = (date: string) => {
+        const selectedDate = new Date(date)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0) // Réinitialiser l'heure à minuit pour la comparaison
+        return selectedDate >= today
+    }
+
+    const sortOrders = (orders: Order[]) => {
+        return orders.sort((a: Order, b: Order) => {
+            if (a.status !== b.status) {
+                return a.status ? 1 : -1; // false (en cours) en premier
+            }
+            if (!a.end_date) return 1;
+            if (!b.end_date) return -1;
+            return new Date(b.end_date).getTime() - new Date(a.end_date).getTime();
+        });
+    }
+
     useEffect(() => {
         const fetchOrders = async () => {
             try {
@@ -42,19 +67,7 @@ export default function Page() {
                     throw new Error('Erreur lors de la récupération des commandes')
                 }
                 const data = await response.json()
-                // Trier d'abord par statut (non terminées en premier) puis par end_date
-                const sortedData = data.sort((a: Order, b: Order) => {
-                    // D'abord trier par statut (false/true)
-                    if (a.status !== b.status) {
-                        return a.status ? 1 : -1; // false (en cours) en premier
-                    }
-                    
-                    // Si les deux commandes ont le même statut, trier par end_date
-                    if (!a.end_date) return 1;
-                    if (!b.end_date) return -1;
-                    return new Date(b.end_date).getTime() - new Date(a.end_date).getTime();
-                });
-                setOrders(sortedData)
+                setOrders(sortOrders(data))
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Une erreur est survenue')
             } finally {
@@ -66,16 +79,21 @@ export default function Page() {
     }, [])
 
     const handleUpdateReturnDate = async (orderId: string) => {
+        if (!validateDate(returnDate)) {
+            setMessage({ type: 'error', text: 'Return date cannot be earlier than today' })
+            return
+        }
+
         setMessage(null)
         const result = await userUpdateOrderReturnDate(orderId, returnDate)
         
         if (result.success) {
             setMessage({ type: 'success', text: result.message })
             setEditingOrderId(null)
-            // Rafraîchir les données
+            // Rafraîchir les données et appliquer le tri
             const response = await fetch('/api/user/orders')
             const data = await response.json()
-            setOrders(data)
+            setOrders(sortOrders(data))
         } else {
             setMessage({ type: 'error', text: result.message })
         }
@@ -93,10 +111,10 @@ export default function Page() {
         
         if (result.success) {
             setMessage({ type: 'success', text: result.message })
-            // Rafraîchir les données
+            // Rafraîchir les données et appliquer le tri
             const response = await fetch('/api/user/orders')
             const data = await response.json()
-            setOrders(data)
+            setOrders(sortOrders(data))
         } else {
             setMessage({ type: 'error', text: result.message })
         }
@@ -217,7 +235,7 @@ export default function Page() {
                                             type="date"
                                             value={returnDate}
                                             onChange={(e) => setReturnDate(e.target.value)}
-                                            min={new Date().toISOString().split('T')[0]}
+                                            min={getMinDate()}
                                         />
                                         <Button
                                             onClick={() => handleUpdateReturnDate(order.id)}
