@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from "react"
-import { adminModifyInstitution, adminModifyCatalog, adminDeleteCatalog, adminDeleteInstitution } from "@/utils/actions"
+import { adminModifyInstitution, adminModifyCatalog, adminDeleteCatalog, adminDeleteInstitution, adminAddStudent, adminRemoveStudent } from "@/utils/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,6 +22,12 @@ interface Institution {
     catalogs: Catalog[]
 }
 
+interface Student {
+    id: string
+    email: string
+    created_at: string
+}
+
 interface AdminOverviewProps {
     institutionId: string
 }
@@ -37,6 +43,9 @@ export default function AdminSettings({ institutionId }: AdminOverviewProps) {
         description: '',
         acronym: ''
     })
+    const [students, setStudents] = useState<Student[]>([])
+    const [newStudentEmail, setNewStudentEmail] = useState('')
+    const [loadingStudents, setLoadingStudents] = useState(true)
 
     useEffect(() => {
         if (!institutionId) return
@@ -55,6 +64,24 @@ export default function AdminSettings({ institutionId }: AdminOverviewProps) {
                 console.error("Failed to fetch institution", err)
                 setMessage({ type: 'error', text: 'Failed to load institution data' })
             })
+    }, [institutionId])
+
+    useEffect(() => {
+        const fetchStudents = async () => {
+            try {
+                const response = await fetch(`/api/admin/settings/students?institution=${institutionId}`)
+                if (!response.ok) throw new Error('Failed to fetch students')
+                const data = await response.json()
+                setStudents(data)
+            } catch (error) {
+                console.error('Error fetching students:', error)
+                setMessage({ type: 'error', text: 'Failed to load students' })
+            } finally {
+                setLoadingStudents(false)
+            }
+        }
+
+        fetchStudents()
     }, [institutionId])
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,6 +176,42 @@ export default function AdminSettings({ institutionId }: AdminOverviewProps) {
             setMessage({ type: 'success', text: result.message })
             // Redirect to admin page after successful deletion
             router.push('/admin')
+        } else {
+            setMessage({ type: 'error', text: result.message })
+        }
+    }
+
+    const handleAddStudent = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setMessage(null)
+
+        const result = await adminAddStudent(institutionId, newStudentEmail)
+        
+        if (result.success) {
+            setMessage({ type: 'success', text: result.message })
+            setNewStudentEmail('')
+            // Refresh students list
+            const response = await fetch(`/api/admin/settings/students?institution=${institutionId}`)
+            const data = await response.json()
+            setStudents(data)
+        } else {
+            setMessage({ type: 'error', text: result.message })
+        }
+    }
+
+    const handleRemoveStudent = async (studentId: string) => {
+        if (!confirm('Are you sure you want to remove this student from the institution?')) {
+            return
+        }
+
+        const result = await adminRemoveStudent(institutionId, studentId)
+        
+        if (result.success) {
+            setMessage({ type: 'success', text: result.message })
+            // Refresh students list
+            const response = await fetch(`/api/admin/settings/students?institution=${institutionId}`)
+            const data = await response.json()
+            setStudents(data)
         } else {
             setMessage({ type: 'error', text: result.message })
         }
@@ -318,6 +381,47 @@ export default function AdminSettings({ institutionId }: AdminOverviewProps) {
                     </div>
                 ) : (
                     <p className="text-gray-500">No catalogs found for this institution.</p>
+                )}
+            </div>
+
+            <div className="space-y-4 border p-4 rounded-lg">
+                <h1 className="text-xl font-medium">Students</h1>
+                
+                <form onSubmit={handleAddStudent} className="flex gap-2">
+                    <Input
+                        type="email"
+                        placeholder="Student email"
+                        value={newStudentEmail}
+                        onChange={(e) => setNewStudentEmail(e.target.value)}
+                        required
+                    />
+                    <Button type="submit">Add Student</Button>
+                </form>
+
+                {loadingStudents ? (
+                    <p>Loading students...</p>
+                ) : students.length > 0 ? (
+                    <div className="space-y-2">
+                        {students.map((student) => (
+                            <div key={student.id} className="flex justify-between items-center p-2 border rounded">
+                                <div>
+                                    <p className="font-medium">{student.email}</p>
+                                    <p className="text-sm text-gray-500">
+                                        Added on {new Date(student.created_at).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleRemoveStudent(student.id)}
+                                >
+                                    Remove
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-gray-500">No students found for this institution.</p>
                 )}
             </div>
         </div>

@@ -12,7 +12,6 @@ import { createClient } from '@/utils/supabase/server'
 */
 
 export async function GET() {
-
     // 1. Verify user and role
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -24,8 +23,15 @@ export async function GET() {
         return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
     }
 
-    // 2. Retrieves insitutions linked to a user
-    const { data: supabaseInstitutionListData, error: supabaseInstitutionListError } = await supabase.from('institution_list').select('institution_id').eq('user_id', user.id)
+    // 2. Get user's email from profiles
+    const { data: profile, error: profileError } = await supabase.from('profiles').select('email').eq('id', user.id).single()
+    if (profileError || !profile?.email) {
+        return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    }
+    const userEmail = profile.email
+
+    // 3. Retrieves institutions linked to the user's email
+    const { data: supabaseInstitutionListData, error: supabaseInstitutionListError } = await supabase.from('institution_list').select('institution_id').eq('email', userEmail)
     if (supabaseInstitutionListError) {
         return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }
@@ -34,7 +40,7 @@ export async function GET() {
         return NextResponse.json([])
     }
 
-    // 3. Retrieves all catalogs linked to insitutions 
+    // 4. Retrieves all catalogs linked to institutions 
     const { data: supabaseInstitutionsData, error: supabaseInstitutionsError } = await supabase
     .from('institutions')
     .select(`
@@ -52,6 +58,6 @@ export async function GET() {
         return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }
 
-    // 4. Return response
+    // 5. Return response
     return NextResponse.json(supabaseInstitutionsData)
 }

@@ -844,3 +844,105 @@ export async function userFinalizeOrder(orderId: string) {
         message: 'Order finalized successfully'
     }
 }
+
+export async function adminAddStudent(institutionId: string, email: string) {
+    const supabase = await createClient()
+    
+    // 1. Verify user and role
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+        return {
+            success: false,
+            message: 'Not authorized'
+        }
+    }
+    const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+    if (roleError || roleData?.role !== 'admin') {
+        return {
+            success: false,
+            message: 'Not authorized'
+        }
+    }
+
+    // 2. Check if student is already in the institution
+    const { data: existingStudent, error: checkError } = await supabase
+        .from('institution_list')
+        .select('id')
+        .eq('institution_id', institutionId)
+        .eq('email', email)
+        .single()
+
+    if (existingStudent) {
+        return {
+            success: false,
+            message: 'Student is already in this institution'
+        }
+    }
+
+    // 3. Add student to institution
+    const { error: insertError } = await supabase
+        .from('institution_list')
+        .insert({
+            institution_id: institutionId,
+            email: email
+        })
+
+    if (insertError) {
+        return {
+            success: false,
+            message: 'Error adding student to institution'
+        }
+    }
+
+    return {
+        success: true,
+        message: 'Student added successfully'
+    }
+}
+
+export async function adminRemoveStudent(institutionId: string, studentId: string) {
+    const supabase = await createClient()
+    
+    // 1. Verify user and role
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+        return {
+            success: false,
+            message: 'Not authorized'
+        }
+    }
+    const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+    if (roleError || roleData?.role !== 'admin') {
+        return {
+            success: false,
+            message: 'Not authorized'
+        }
+    }
+
+    // 2. Remove student from institution
+    const { error: deleteError } = await supabase
+        .from('institution_list')
+        .delete()
+        .eq('id', studentId)
+        .eq('institution_id', institutionId)
+
+    if (deleteError) {
+        return {
+            success: false,
+            message: 'Error removing student from institution'
+        }
+    }
+
+    return {
+        success: true,
+        message: 'Student removed successfully'
+    }
+}

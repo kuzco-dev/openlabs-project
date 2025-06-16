@@ -54,8 +54,7 @@ export async function GET(req: Request) {
             .select(`
                 quantity,
                 items (
-                    name,
-                    description
+                    name
                 )
             `)
             .eq('order_id', order.id)
@@ -71,10 +70,20 @@ export async function GET(req: Request) {
             .select('email')
             .eq('id', order.user_id)
             .single()
+            
 
             if (profileError) {
                 console.error('Error fetching profile:', profileError)
             }
+
+            const formattedItems = orderItems?.map(item => {
+                // Type assertion with unknown as intermediate step
+                const itemsData = item.items as unknown as { name: string }
+                return {
+                    name: itemsData.name || 'Unknown',
+                    quantity: item.quantity
+                }
+            }) || []
 
             return {
                 id: order.id,
@@ -83,11 +92,7 @@ export async function GET(req: Request) {
                 end_date: order.end_date,
                 n_items: orderItems?.length ?? 0,
                 user_email: profileData?.email || 'N/A',
-                items: orderItems?.map(item => ({
-                    name: item.items[0].name,
-                    description: item.items[0].description,
-                    quantity: item.quantity
-                })) || []
+                items: formattedItems
             }
         })
     )
