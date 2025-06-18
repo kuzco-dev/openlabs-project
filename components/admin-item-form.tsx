@@ -42,11 +42,9 @@ const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
   const [isPending, startTransition] = useTransition()
   console.log(formData, )
 
-  // Optional callback on success
   useEffect(() => {
     if (state.success && onSuccess) {
       onSuccess()
-      // Reset form
       setErrors({})
       setFormData(null)
     }

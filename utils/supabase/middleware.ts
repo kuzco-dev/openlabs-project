@@ -32,14 +32,12 @@ export async function updateSession(request: NextRequest) {
     const pathname = request.nextUrl.pathname
 
     if (!user) {
-    // Si non connecté → autoriser uniquement / et /signup
     if (pathname !== '/' && pathname !== '/signup') {
         return NextResponse.redirect(new URL('/', request.url))
     }
     return supabaseResponse
     }
 
-    // Connecté → récupérer le rôle
     const { data: roleData } = await supabase
     .from('roles')
     .select('role')
@@ -48,13 +46,11 @@ export async function updateSession(request: NextRequest) {
 
     const role = roleData?.role
 
-    // Redirection si connecté mais sur / ou /signup
     if (pathname === '/' || pathname === '/signup') {
     const redirectPath = role === 'admin' ? '/admin' : '/user'
     return NextResponse.redirect(new URL(redirectPath, request.url))
     }
 
-    // Protection de route
     if (pathname.startsWith('/admin') && role !== 'admin') {
         return NextResponse.redirect(new URL('/', request.url))
     }

@@ -88,7 +88,6 @@ export default function AdminItems({
   const handleEdit = async (itemId: string, formData: FormData) => {
     const supabase = createClient()
     
-    // Mettre à jour les données de l'item
     const { error: updateError } = await supabase
       .from('items')
       .update({
@@ -104,7 +103,6 @@ export default function AdminItems({
       return
     }
 
-    // Si une nouvelle image est fournie, la mettre à jour
     const imageFile = formData.get('item_image') as File
     if (imageFile && imageFile.size > 0) {
       const { error: uploadError } = await supabase
@@ -120,7 +118,6 @@ export default function AdminItems({
       }
     }
 
-    // Rafraîchir la liste des items
     fetchItems()
   }
 

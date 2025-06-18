@@ -146,7 +146,6 @@ export async function signout() {
 
 /*
 Server Action: admin item form submission.
-    - Validates form using Zod schema
 */
 export async function adminCreateItem(catalogId: string, prevState: any, formData: unknown) {
     if (!(formData instanceof FormData)) {
@@ -177,7 +176,6 @@ export async function adminCreateItem(catalogId: string, prevState: any, formDat
       }
     }
   
-    // Create the item first to get its ID
     const { data: itemData, error: supabaseItemsError } = await supabase
       .from('items')
       .insert({
@@ -197,7 +195,6 @@ export async function adminCreateItem(catalogId: string, prevState: any, formDat
       }
     }
 
-    // If there's an image, upload it
     if (validData.item_image) {
       const imageFile = validData.item_image
       const { error: uploadError } = await supabase
@@ -210,7 +207,6 @@ export async function adminCreateItem(catalogId: string, prevState: any, formDat
         console.log(uploadError)
 
       if (uploadError) {
-        // If image upload fails, delete the item
         await supabase
           .from('items')
           .delete()
@@ -231,7 +227,6 @@ export async function adminCreateItem(catalogId: string, prevState: any, formDat
 
 /*
 Server Action: User institutions form submission.
-    - Validates form using Zod schema
 */
 export async function userAddInstitutions(prevState: any, data: unknown) {
     if (!(data instanceof FormData)) {
@@ -257,7 +252,7 @@ export async function userAddInstitutions(prevState: any, data: unknown) {
     if (!user) {
       return {
         success: false,
-        message: 'User not authenticated',
+        message: 'Authentication error',
       }
     }
   
@@ -281,23 +276,23 @@ type OrderItem = {
   quantity: number
 }
 
+/*
+Server Action: User order creation.
+*/
 export async function userCreateOrder(catalogId: string, items: OrderItem[], returnDate: string) {
   const supabase = await createClient()
-  
-  // Get the current user
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   
   if (userError || !user) {
     return {
       success: false,
-      message: 'Utilisateur non authentifié'
+      message: 'Authentication error'
     }
   }
 
-  // Valider la date de retour
   const selectedDate = new Date(returnDate)
   const today = new Date()
-  today.setHours(0, 0, 0, 0) // Réinitialiser l'heure à minuit pour la comparaison
+  today.setHours(0, 0, 0, 0)
   if (selectedDate < today) {
     return {
       success: false,
@@ -305,7 +300,6 @@ export async function userCreateOrder(catalogId: string, items: OrderItem[], ret
     }
   }
 
-  // Vérifier les quantités disponibles
   const { data: availableItems, error: itemsError } = await supabase
     .from('items')
     .select('id, actual_quantity')
@@ -314,26 +308,24 @@ export async function userCreateOrder(catalogId: string, items: OrderItem[], ret
   if (itemsError) {
     return {
       success: false,
-      message: 'Erreur lors de la vérification des quantités'
+      message: 'Internal error'
     }
   }
 
-  // Vérifier que toutes les quantités sont disponibles
   for (const item of items) {
     const availableItem = availableItems.find(i => i.id === item.item_id)
     if (!availableItem || availableItem.actual_quantity < item.quantity) {
       return {
         success: false,
-        message: 'Quantité insuffisante pour certains items'
+        message: 'Insufficient quantity for some items'
       }
     }
   }
 
-  // Start a transaction
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
-      status: false, // false = pending
+      status: false, 
       catalog_id: catalogId,
       user_id: user.id,
       end_date: returnDate
@@ -344,11 +336,10 @@ export async function userCreateOrder(catalogId: string, items: OrderItem[], ret
   if (orderError || !order) {
     return {
       success: false,
-      message: 'Erreur lors de la création de la commande'
+      message: 'Internal error'
     }
   }
 
-  // Insert order items
   const orderItems = items.map(item => ({
     order_id: order.id,
     item_id: item.item_id,
@@ -360,7 +351,6 @@ export async function userCreateOrder(catalogId: string, items: OrderItem[], ret
     .insert(orderItems)
 
   if (orderItemsError) {
-    // If there's an error, we should probably delete the order
     await supabase
       .from('orders')
       .delete()
@@ -368,11 +358,10 @@ export async function userCreateOrder(catalogId: string, items: OrderItem[], ret
 
     return {
       success: false,
-      message: 'Erreur lors de l\'ajout des items à la commande'
+      message: 'Internal error'
     }
   }
 
-  // Mettre à jour les quantités disponibles
   for (const item of items) {
     const availableItem = availableItems.find(i => i.id === item.item_id)
     if (!availableItem) continue
@@ -385,7 +374,6 @@ export async function userCreateOrder(catalogId: string, items: OrderItem[], ret
       .eq('id', item.item_id)
 
     if (updateError) {
-      // En cas d'erreur, on devrait annuler la commande
       await supabase
         .from('orders')
         .delete()
@@ -398,21 +386,19 @@ export async function userCreateOrder(catalogId: string, items: OrderItem[], ret
 
       return {
         success: false,
-        message: 'Erreur lors de la mise à jour des quantités'
+        message: 'Internal error'
       }
     }
   }
 
   return {
     success: true,
-    message: 'Commande créée avec succès'
+    message: 'Order created successfully'
   }
 }
 
 /*
 Server Action: admin catalog creation.
-    - Validates form using Zod schema
-    - Creates catalog in Supabase
 */
 export async function adminCreateCatalog(institutionId: string, prevState: any, data: unknown) {
     console.log(institutionId)
@@ -425,11 +411,10 @@ export async function adminCreateCatalog(institutionId: string, prevState: any, 
     if (supabaseUserError || !supabaseUserData) {
         return {
         success: false,
-        message: "Unauthenticated user"
+        message: "Authentication error"
         }
     }
 
-    // Data check
     if (!(data instanceof FormData)) {
         return {
           success: false,
@@ -448,7 +433,6 @@ export async function adminCreateCatalog(institutionId: string, prevState: any, 
     }
     const dataValid: CreateCatalogSchemaType = dataResult.data
 
-    // Insert data
     const { error: supabaseCatalogError } = await supabase
     .from('catalogs')
     .insert({
@@ -470,19 +454,20 @@ export async function adminCreateCatalog(institutionId: string, prevState: any, 
     }
 }
 
+/*
+Server Action: Admin institution creation.
+*/
 export async function adminCreateInstitution(prevState: any, data: unknown){
 
-    // Authentification check
     const supabase = await createClient()
     const { data: supabaseUserData, error: supabaseUserError } = await supabase.auth.getUser()
     if (supabaseUserError || !supabaseUserData) {
         return {
             success: false,
-            message: "Unauthenticated user"
+            message: "Authentication error"
         }
     }
 
-    // Data check
     if (!(data instanceof FormData)) {
         return {
             success: false,
@@ -524,8 +509,10 @@ export async function adminCreateInstitution(prevState: any, data: unknown){
     }
 }
 
+/*
+Server Action: Admin institution modification.
+*/
 export async function adminModifyInstitution(institutionId: string, prevState: any, data: unknown) {
-    // Authentification check
     const supabase = await createClient()
     const { data: supabaseUserData, error: supabaseUserError } = await supabase.auth.getUser()
     if (supabaseUserError || !supabaseUserData) {
@@ -535,7 +522,6 @@ export async function adminModifyInstitution(institutionId: string, prevState: a
         }
     }
 
-    // Data check
     if (!(data instanceof FormData)) {
         return {
             success: false,
@@ -554,7 +540,6 @@ export async function adminModifyInstitution(institutionId: string, prevState: a
     }
     const dataValid: CreateInstitutionSchemaType = dataResult.data
 
-    // Update data
     const { error: updateError } = await supabase
         .from('institutions')
         .update({
@@ -578,8 +563,10 @@ export async function adminModifyInstitution(institutionId: string, prevState: a
     }
 }
 
+/*
+Server Action: Admin catalog modification.
+*/
 export async function adminModifyCatalog(catalogId: string, prevState: any, data: unknown) {
-    // Authentification check
     const supabase = await createClient()
     const { data: supabaseUserData, error: supabaseUserError } = await supabase.auth.getUser()
     if (supabaseUserError || !supabaseUserData) {
@@ -589,7 +576,6 @@ export async function adminModifyCatalog(catalogId: string, prevState: any, data
         }
     }
 
-    // Data check
     if (!(data instanceof FormData)) {
         return {
             success: false,
@@ -632,8 +618,10 @@ export async function adminModifyCatalog(catalogId: string, prevState: any, data
     }
 }
 
+/*
+Server Action: Admin catalog deletion.
+*/
 export async function adminDeleteCatalog(catalogId: string) {
-    // Authentification check
     const supabase = await createClient()
     const { data: supabaseUserData, error: supabaseUserError } = await supabase.auth.getUser()
     if (supabaseUserError || !supabaseUserData) {
@@ -643,7 +631,6 @@ export async function adminDeleteCatalog(catalogId: string) {
         }
     }
 
-    // Delete the catalog
     const { error: deleteError } = await supabase
         .from('catalogs')
         .delete()
@@ -663,8 +650,10 @@ export async function adminDeleteCatalog(catalogId: string) {
     }
 }
 
+/*
+Server Action: Admin institution deletion.
+*/
 export async function adminDeleteInstitution(institutionId: string) {
-    // Authentification check
     const supabase = await createClient()
     const { data: supabaseUserData, error: supabaseUserError } = await supabase.auth.getUser()
     if (supabaseUserError || !supabaseUserData) {
@@ -674,7 +663,6 @@ export async function adminDeleteInstitution(institutionId: string) {
         }
     }
 
-    // Delete the institution
     const { error: deleteError } = await supabase
         .from('institutions')
         .delete()
@@ -694,10 +682,12 @@ export async function adminDeleteInstitution(institutionId: string) {
     }
 }
 
+/*
+Server Action: User order return date modification.
+*/
 export async function userUpdateOrderReturnDate(orderId: string, returnDate: string) {
     const supabase = await createClient()
     
-    // Vérifier l'authentification
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
         return {
@@ -706,7 +696,6 @@ export async function userUpdateOrderReturnDate(orderId: string, returnDate: str
         }
     }
 
-    // Vérifier que la commande appartient bien à l'utilisateur
     const { data: order, error: orderError } = await supabase
         .from('orders')
         .select('user_id, status')
@@ -720,7 +709,6 @@ export async function userUpdateOrderReturnDate(orderId: string, returnDate: str
         }
     }
 
-    // Vérifier que la commande n'est pas terminée
     if (order.status) {
         return {
             success: false,
@@ -728,7 +716,6 @@ export async function userUpdateOrderReturnDate(orderId: string, returnDate: str
         }
     }
 
-    // Mettre à jour la date de retour
     const { error: updateError } = await supabase
         .from('orders')
         .update({ end_date: returnDate })
@@ -747,10 +734,12 @@ export async function userUpdateOrderReturnDate(orderId: string, returnDate: str
     }
 }
 
+/*
+Server Action: User order finalization.
+*/
 export async function userFinalizeOrder(orderId: string) {
     const supabase = await createClient()
     
-    // Vérifier l'authentification
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
         return {
@@ -759,7 +748,6 @@ export async function userFinalizeOrder(orderId: string) {
         }
     }
 
-    // Vérifier que la commande appartient bien à l'utilisateur
     const { data: order, error: orderError } = await supabase
         .from('orders')
         .select('user_id, status')
@@ -773,7 +761,6 @@ export async function userFinalizeOrder(orderId: string) {
         }
     }
 
-    // Vérifier que la commande n'est pas déjà terminée
     if (order.status) {
         return {
             success: false,
@@ -781,7 +768,6 @@ export async function userFinalizeOrder(orderId: string) {
         }
     }
 
-    // Récupérer les items de la commande avec leurs quantités
     const { data: orderItems, error: orderItemsError } = await supabase
         .from('order_items')
         .select('item_id, quantity')
@@ -794,9 +780,7 @@ export async function userFinalizeOrder(orderId: string) {
         }
     }
 
-    // Mettre à jour les quantités disponibles pour chaque item
     for (const orderItem of orderItems) {
-        // D'abord récupérer la quantité actuelle
         const { data: currentItem, error: getItemError } = await supabase
             .from('items')
             .select('actual_quantity')
@@ -810,7 +794,6 @@ export async function userFinalizeOrder(orderId: string) {
             }
         }
 
-        // Mettre à jour avec la nouvelle quantité
         const { error: updateError } = await supabase
             .from('items')
             .update({ 
@@ -826,7 +809,6 @@ export async function userFinalizeOrder(orderId: string) {
         }
     }
 
-    // Mettre à jour le statut de la commande
     const { error: updateError } = await supabase
         .from('orders')
         .update({ status: true })
@@ -845,10 +827,12 @@ export async function userFinalizeOrder(orderId: string) {
     }
 }
 
+/*
+Server Action: Admin student addition.
+*/
 export async function adminAddStudent(institutionId: string, email: string) {
     const supabase = await createClient()
     
-    // 1. Verify user and role
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
         return {
@@ -868,7 +852,6 @@ export async function adminAddStudent(institutionId: string, email: string) {
         }
     }
 
-    // 2. Check if student is already in the institution
     const { data: existingStudent, error: checkError } = await supabase
         .from('institution_list')
         .select('id')
@@ -882,8 +865,6 @@ export async function adminAddStudent(institutionId: string, email: string) {
             message: 'Student is already in this institution'
         }
     }
-
-    // 3. Add student to institution
     const { error: insertError } = await supabase
         .from('institution_list')
         .insert({
@@ -904,10 +885,12 @@ export async function adminAddStudent(institutionId: string, email: string) {
     }
 }
 
+/*
+Server Action: Admin student removal.
+*/
 export async function adminRemoveStudent(institutionId: string, studentId: string) {
     const supabase = await createClient()
     
-    // 1. Verify user and role
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
         return {
@@ -927,7 +910,6 @@ export async function adminRemoveStudent(institutionId: string, studentId: strin
         }
     }
 
-    // 2. Remove student from institution
     const { error: deleteError } = await supabase
         .from('institution_list')
         .delete()

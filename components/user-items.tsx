@@ -44,7 +44,7 @@ export default function UserItems({ catalogId }: UserItemsProps) {
       .then(async (res) => {
         if (!res.ok) {
           const err = await res.json()
-          throw new Error(err.error || 'Erreur inconnue')
+          throw new Error(err.error || 'Unknown error')
         }
         return res.json()
       })
