@@ -16,6 +16,7 @@ type BagContextType = {
   removeItem: (itemId: string) => void
   updateQuantity: (itemId: string, quantity: number) => void
   createOrder: (catalogId: string, returnDate: string) => Promise<{ success: boolean; message: string }>
+  clearBag: () => void
 }
 
 const BagContext = createContext<BagContextType | undefined>(undefined)
@@ -47,6 +48,10 @@ export function BagProvider({ children }: { children: ReactNode }) {
     )
   }
 
+  const clearBag = () => {
+    setItems([])
+  }
+
   const createOrder = async (catalogId: string, returnDate: string) => {
     if (items.length === 0) {
       return { success: false, message: 'Le panier est vide' }
@@ -67,7 +72,7 @@ export function BagProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <BagContext.Provider value={{ items, addItem, removeItem, updateQuantity, createOrder }}>
+    <BagContext.Provider value={{ items, addItem, removeItem, updateQuantity, createOrder, clearBag }}>
       {children}
     </BagContext.Provider>
   )
