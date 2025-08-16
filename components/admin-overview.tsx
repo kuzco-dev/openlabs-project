@@ -335,7 +335,7 @@ export default function AdminOverview({ institutionId, catalogId }: AdminOvervie
           </CardHeader>
           <CardFooter className="flex-col items-start text-sm">
             <div className="text-muted-foreground">
-              Total students with access to this catalog
+              Total students
             </div>
           </CardFooter>
         </Card>
