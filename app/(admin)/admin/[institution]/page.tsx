@@ -26,6 +26,7 @@ import {
 import AdminOrders from "@/components/admin-orders"
 import AdminItems from "@/components/admin-items"
 import AdminSettings from "@/components/admin-settings"
+import AdminOverview from "@/components/admin-overview"
 
 interface Catalog {
     id: string
@@ -70,6 +71,8 @@ export default function Page() {
         switch (activeTab) {
             case "settings":
                 return <AdminSettings institutionId={institutionId} />
+            case "overview":
+              return <AdminOverview institutionId={institutionId} catalogId={catalogId} />
             case "orders":
                 return <AdminOrders institutionId={institutionId} catalogId={catalogId} />
             case "items":
@@ -144,8 +147,10 @@ export default function Page() {
                 </div>
 
                 <div><button onClick={() => setActiveTab("settings")} className="cursor-pointer">Settings</button></div>
+                <div><button onClick={() => setActiveTab("overview")} className="cursor-pointer">Dashboard</button></div>
                 <div><button onClick={() => setActiveTab("orders")} className="cursor-pointer">Orders</button></div>
                 <div><button onClick={() => setActiveTab("items")} className="cursor-pointer">Items</button></div>
+                
             </div>
             <div className="p-4">
                 {renderContent()}

@@ -37,15 +37,24 @@ export async function GET(req: Request) {
     // 3. Retrieve orders
     const { data: supabaseOrdersData, error: supabaseOrdersError } = await supabase
     .from('orders')
-    .select('id, status, created_at, end_date, user_id')
+    .select('id, status, created_at, end_date, user_id, validation')
     .eq('catalog_id', catalogId)
 
     if (supabaseOrdersError) {
-        console.error('Error fetching orders:', supabaseOrdersError)
         return NextResponse.json({ error: "Internal error" }, { status: 500 })
     }
 
-    // 4. Add items in order and user emails
+    // 4. Get all item types for this catalog
+    const { data: allItemTypes, error: itemTypesError } = await supabase
+        .from('items_types')
+        .select('id, name')
+        .eq('catalog_id', catalogId)
+
+    if (itemTypesError) {
+        return NextResponse.json({ error: "Internal error" }, { status: 500 })
+    }
+
+    // 5. Add items in order and user emails
     const enrichedOrders = await Promise.all(
         supabaseOrdersData.map(async (order) => {
             // Get order items
@@ -54,15 +63,17 @@ export async function GET(req: Request) {
             .select(`
                 quantity,
                 items (
-                    name
+                    name,
+                    serial_number,
+                    item_type_id,
+                    items_types (
+                        name
+                    )
                 )
             `)
             .eq('order_id', order.id)
 
-            if (itemsError) {
-                console.error('Error fetching order items:', itemsError)
-                return NextResponse.json({ error: "Internal error" }, { status: 500 })
-            }
+            
 
             // Get user email from profiles
             const { data: profileData, error: profileError } = await supabase
@@ -72,15 +83,18 @@ export async function GET(req: Request) {
             .single()
             
 
-            if (profileError) {
-                console.error('Error fetching profile:', profileError)
-            }
-
             const formattedItems = orderItems?.map(item => {
                 // Type assertion with unknown as intermediate step
-                const itemsData = item.items as unknown as { name: string }
+                const itemsData = item.items as unknown as { 
+                    name: string; 
+                    serial_number?: string;
+                    item_type_id?: string;
+                    items_types?: { name: string } | null;
+                }
                 return {
                     name: itemsData.name || 'Unknown',
+                    serial_number: itemsData.serial_number || null,
+                    item_type: itemsData.items_types?.name || null,
                     quantity: item.quantity
                 }
             }) || []
@@ -90,6 +104,7 @@ export async function GET(req: Request) {
                 status: order.status,
                 creation_date: order.created_at,
                 end_date: order.end_date,
+                validation: order.validation,
                 n_items: orderItems?.length ?? 0,
                 user_email: profileData?.email || 'N/A',
                 items: formattedItems
@@ -97,6 +112,9 @@ export async function GET(req: Request) {
         })
     )
 
-    // 5. Return response
-    return NextResponse.json(enrichedOrders)
+    // 6. Return response with orders and item types
+    return NextResponse.json({
+        orders: enrichedOrders,
+        itemTypes: allItemTypes || []
+    }, { status: 200 })
 }

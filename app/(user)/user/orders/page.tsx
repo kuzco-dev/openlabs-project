@@ -18,11 +18,16 @@ interface Order {
     status: boolean
     created_at: string
     end_date: string | null
+    validation: boolean | null
     catalog: {
         name: string
         acronym: string
     }
     order_items: OrderItem[]
+    latest_message: {
+        message: string
+        created_at: string
+    } | null
 }
 
 export default function Page() {
@@ -57,6 +62,27 @@ export default function Page() {
             if (!b.end_date) return -1;
             return new Date(b.end_date).getTime() - new Date(a.end_date).getTime();
         });
+    }
+
+    const getOrderStatus = (order: Order) => {
+        if (!order.status) {
+            return {
+                text: 'Loan in progress',
+                className: 'bg-yellow-100 text-yellow-800'
+            }
+        }
+        
+        if (order.validation) {
+            return {
+                text: 'Return validated',
+                className: 'bg-green-100 text-green-800'
+            }
+        }
+        
+        return {
+            text: 'Return requested',
+            className: 'bg-blue-100 text-blue-800'
+        }
     }
 
     useEffect(() => {
@@ -199,12 +225,8 @@ export default function Page() {
                                     )}
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
-                                    <div className={`px-3 py-1 rounded-full text-sm ${
-                                        order.status 
-                                            ? 'bg-green-100 text-green-800' 
-                                            : 'bg-yellow-100 text-yellow-800'
-                                    }`}>
-                                        {order.status ? 'Loan completed' : 'Loan in progress'}
+                                    <div className={`px-3 py-1 rounded-full text-sm ${getOrderStatus(order).className}`}>
+                                        {getOrderStatus(order).text}
                                     </div>
                                     {!order.status && (
                                         <div className="flex gap-2">
@@ -270,6 +292,26 @@ export default function Page() {
                                     ))}
                                 </div>
                             </div>
+                            
+                            {order.latest_message && (
+                                <div className="border-t pt-4">
+                                    <h4 className="font-medium mb-2">Latest message :</h4>
+                                    <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                                        <p className="text-sm text-red-800 mb-1">
+                                            {order.latest_message.message}
+                                        </p>
+                                        <p className="text-xs text-red-600">
+                                            {new Date(order.latest_message.created_at).toLocaleDateString('fr-FR', {
+                                                day: 'numeric',
+                                                month: 'long',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

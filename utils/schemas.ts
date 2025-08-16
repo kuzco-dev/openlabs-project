@@ -25,7 +25,9 @@ export const createItemSchema = z.object({
   item_quantity: z.coerce.number().min(1, 'Minimum quantity is 1').max(1000, 'Maximum quantity is 1000'),
   item_image: z.instanceof(File).refine((file) => file.type === 'image/jpeg', {
     message: 'Only JPEG images are allowed'
-  }).optional()
+  }).optional(),
+  serial_number: z.string().max(30, 'Serial number must be at most 30 characters').optional(),
+  item_type_id: z.string().optional(),
 })
 
 export type CreateItemSchemaType = z.infer<typeof createItemSchema>
@@ -47,3 +49,10 @@ export const createInstitutionSchema = z.object({
 })
 
 export type CreateInstitutionSchemaType = z.infer<typeof createInstitutionSchema>
+
+// Item Type Schema
+export const createItemTypeSchema = z.object({
+    type_name: z.string().max(50, 'Type name must be at most 50 characters'),
+})
+
+export type CreateItemTypeSchemaType = z.infer<typeof createItemTypeSchema>

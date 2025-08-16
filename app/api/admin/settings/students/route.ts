@@ -27,9 +27,8 @@ export async function GET(req: Request) {
         .eq('institution_id', institutionId)
 
     if (studentsError) {
-        console.error('Error fetching students:', studentsError)
         return NextResponse.json({ error: "Internal error" }, { status: 500 })
     }
 
-    return NextResponse.json(students)
+    return NextResponse.json(students,  { status: 200 })
 } 

@@ -83,7 +83,7 @@ export default function UserBag({ catalogId }: UserBagProps) {
                   variant="destructive"
                   onClick={() => removeItem(item.id)}
                 >
-                  Supprimer
+                  Delete
                 </Button>
               </div>
             </div>

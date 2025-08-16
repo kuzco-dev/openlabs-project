@@ -28,6 +28,7 @@ export async function GET() {
     if (profileError || !profile?.email) {
         return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }
+    
     const userEmail = profile.email
 
     // 3. Retrieves institutions linked to the user's email
@@ -37,7 +38,7 @@ export async function GET() {
     }
     const institutionIds = supabaseInstitutionListData.map((inst) => inst.institution_id)
     if (institutionIds.length === 0) {
-        return NextResponse.json([])
+        return NextResponse.json([],  { status: 200 })
     }
 
     // 4. Retrieves all catalogs linked to institutions 
@@ -59,5 +60,5 @@ export async function GET() {
     }
 
     // 5. Return response
-    return NextResponse.json(supabaseInstitutionsData)
+    return NextResponse.json(supabaseInstitutionsData,  { status: 200 })
 }

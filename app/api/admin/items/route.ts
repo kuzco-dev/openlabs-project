@@ -23,7 +23,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
     }
     const { data: supabaseRolesData, error: supabaseRolesError } = await supabase.from('roles').select('role').eq('user_id', user.id).maybeSingle()
-    if (supabaseRolesData?.role != 'admin' || supabaseRolesError) {
+    if (supabaseRolesData?.role != 'admin' ) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
     }
 
@@ -34,16 +34,17 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'Missing catalog ID' }, { status: 400 })
     }
 
-    // 3. Retrieve items
+    // 3. Retrieve items with type names
     const { data: supabaseItemsData, error: supabaseItemsError } = await supabase
         .from('items')
-        .select('*')
+        .select(`
+            *,
+            items_types!items_item_type_id_fkey (
+                name
+            )
+        `)
         .eq('catalog_id', catalogId)
 
-    if (supabaseItemsError) {
-        return NextResponse.json({ error: "Internal error"}, { status: 500 })
-    }
-
     // 4. Return response
-    return NextResponse.json(supabaseItemsData)
+    return NextResponse.json(supabaseItemsData, { status: 200 })
 }

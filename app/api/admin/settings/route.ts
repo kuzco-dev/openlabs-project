@@ -54,5 +54,5 @@ export async function GET(request: Request) {
     }
 
     // 4. Return response
-    return NextResponse.json(institution)
+    return NextResponse.json(institution, { status: 200 } )
 } 

@@ -22,10 +22,12 @@ export async function GET(req: Request) {
     if (!user) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
     }
-    const { data: supabaseRolesData, error: supabaseRolesError } = await supabase.from('roles').select('role').eq('user_id', user.id).maybeSingle()
-    if (supabaseRolesData?.role != 'admin' || supabaseRolesError) {
-        return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
+    
+    const { data: supabaseRolesData } = await supabase.from('roles').select('role').eq('user_id', user.id).maybeSingle()
+    if (supabaseRolesData?.role != 'admin') {
+      return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
     }
+
 
     // 2. Verify params
     const { searchParams } = new URL(req.url)
@@ -40,10 +42,11 @@ export async function GET(req: Request) {
         .select('*')
         .eq('institution_id', institutionId)
 
+
     if (supabaseCatalogsError) {
-        return NextResponse.json({ error: "Internal error" }, { status: 500 })
+        return NextResponse.json({ error: "Institution not found" }, { status: 400 })
     }
 
     // 4. Return response
-    return NextResponse.json(supabaseCatalogsData)
+    return NextResponse.json(supabaseCatalogsData, { status: 200 })
 }
