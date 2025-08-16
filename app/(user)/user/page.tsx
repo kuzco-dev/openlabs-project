@@ -31,6 +31,17 @@ interface Institution {
   catalogs: Catalog[]
 }
 
+interface ScannedItem {
+  id: string
+  name: string
+  description: string
+  default_quantity: number
+  actual_quantity: number
+  created_at: string
+  catalog_id: string
+  image_url: string
+}
+
 function UserCatalogSelectorContent() {
   const [institutions, setInstitutions] = useState<Institution[]>([])
   const [selectedInstitution, setSelectedInstitution] = useState<Institution | null>(null)
@@ -105,7 +116,7 @@ function UserCatalogSelectorContent() {
         throw new Error('Invalid response format')
       }
       
-      const scannedItem = items.find((item: any) => item && item.id === decodedText)
+      const scannedItem = items.find((item: ScannedItem) => item && item.id === decodedText)
       
       if (!scannedItem) {
         setScanMessage("This QR code doesn't match any item in this catalog")
