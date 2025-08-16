@@ -49,7 +49,7 @@ const AdminTypesForm = ({ catalogId, onSuccess }: AdminTypesFormProps) => {
     try {
       // Validate form data
       // eslint-disable-line react-hooks/exhaustive-deps
-      const validatedData = typeSchema.parse({
+      const validatedData = typeSchema.parse({ // eslint-disable-line react-hooks/exhaustive-deps
         type_name: formDataObj.get('type_name'),
       })
 
