@@ -47,7 +47,10 @@ export function QRScanner({ onScan, onClose, isOpen }: QRScannerProps) {
     const html5QrcodeScanner = new Html5Qrcode(qrCodeRegionId)
     html5QrcodeScannerRef.current = html5QrcodeScanner
 
-    const config = { fps: 10, qrbox: 250 }
+    const config = { 
+      fps: 10, 
+      qrbox: undefined // Pas de cadrage visuel
+    }
 
     setIsScanning(true)
 
@@ -100,7 +103,7 @@ export function QRScanner({ onScan, onClose, isOpen }: QRScannerProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 relative">
+      <div className="bg-white rounded-lg p-6 w-full max-w-sm mx-4 relative">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Scan QR Code</h2>
           <Button
@@ -121,7 +124,17 @@ export function QRScanner({ onScan, onClose, isOpen }: QRScannerProps) {
 
         <div 
           id={qrCodeRegionId} 
-          className="w-full h-64 bg-gray-100 rounded-lg overflow-hidden"
+          className="w-full overflow-hidden"
+          style={{ 
+            width: '100%',
+            height: '280px',
+            aspectRatio: '1 / 1',
+            maxWidth: '280px',
+            maxHeight: '280px',
+            margin: '0 auto',
+            backgroundColor: 'transparent',
+            borderRadius: '0px'
+          }}
         />
 
         {isScanning && (
