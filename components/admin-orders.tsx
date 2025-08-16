@@ -310,6 +310,7 @@ export default function AdminOrders({
       } else {
         alert(result.message)
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       alert('Error validating order')
     } finally {
@@ -343,6 +344,7 @@ export default function AdminOrders({
       
       // Clear selection
       setSelectedOrders(new Set())
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       alert('Error validating orders')
     } finally {
