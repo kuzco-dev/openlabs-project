@@ -12,10 +12,12 @@ type BagItem = {
 
 type BagContextType = {
   items: BagItem[]
+  returnDate: string
   addItem: (item: Omit<BagItem, 'quantity'>, quantity: number) => void
   removeItem: (itemId: string) => void
   updateQuantity: (itemId: string, quantity: number) => void
-  createOrder: (catalogId: string, returnDate: string) => Promise<{ success: boolean; message: string }>
+  setReturnDate: (date: string) => void
+  createOrder: (catalogId: string) => Promise<{ success: boolean; message: string }>
   clearBag: () => void
 }
 
@@ -23,6 +25,7 @@ const BagContext = createContext<BagContextType | undefined>(undefined)
 
 export function BagProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<BagItem[]>([])
+  const [returnDate, setReturnDate] = useState<string>('')
 
   const addItem = (item: Omit<BagItem, 'quantity'>, quantity: number) => {
     setItems(currentItems => {
@@ -43,18 +46,23 @@ export function BagProvider({ children }: { children: ReactNode }) {
   const updateQuantity = (itemId: string, quantity: number) => {
     setItems(currentItems =>
       currentItems.map(item =>
-        item.id === itemId ? { ...item, quantity } : item
+        item.id === itemId ? { ...item, quantity: Math.max(0, quantity) } : item
       )
     )
   }
 
   const clearBag = () => {
     setItems([])
+    setReturnDate('')
   }
 
-  const createOrder = async (catalogId: string, returnDate: string) => {
+  const createOrder = async (catalogId: string) => {
     if (items.length === 0) {
       return { success: false, message: 'Le panier est vide' }
+    }
+
+    if (!returnDate) {
+      return { success: false, message: 'Please select a return date' }
     }
 
     const orderItems = items.map(item => ({
@@ -66,13 +74,23 @@ export function BagProvider({ children }: { children: ReactNode }) {
     
     if (result.success) {
       setItems([]) // Clear the bag after successful order
+      setReturnDate('') // Clear the return date after successful order
     }
     
     return result
   }
 
   return (
-    <BagContext.Provider value={{ items, addItem, removeItem, updateQuantity, createOrder, clearBag }}>
+    <BagContext.Provider value={{ 
+      items, 
+      returnDate, 
+      addItem, 
+      removeItem, 
+      updateQuantity, 
+      setReturnDate, 
+      createOrder, 
+      clearBag 
+    }}>
       {children}
     </BagContext.Provider>
   )

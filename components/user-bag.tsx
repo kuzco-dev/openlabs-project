@@ -10,10 +10,12 @@ type UserBagProps = {
 }
 
 export default function UserBag({ catalogId }: UserBagProps) {
-  const { items, removeItem, updateQuantity, createOrder } = useBag()
+  const { items, returnDate, removeItem, updateQuantity, setReturnDate, createOrder } = useBag()
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  const [returnDate, setReturnDate] = useState('')
+
+  // Vérifier si toutes les quantités sont valides (supérieures à 0)
+  const hasValidQuantities = items.every(item => item.quantity > 0)
 
   // Fonction pour obtenir la date minimale (aujourd'hui)
   const getMinDate = () => {
@@ -43,7 +45,7 @@ export default function UserBag({ catalogId }: UserBagProps) {
     setIsLoading(true)
     setMessage(null)
     
-    const result = await createOrder(catalogId, returnDate)
+    const result = await createOrder(catalogId)
     
     setMessage(result.message)
     setIsLoading(false)
@@ -72,9 +74,10 @@ export default function UserBag({ catalogId }: UserBagProps) {
                 <Input
                   type="number"
                   min="0"
-                  value={item.quantity}
+                  value={item.quantity || ''}
                   onChange={(e) => {
-                    const quantity = parseInt(e.target.value) || 0
+                    const value = e.target.value
+                    const quantity = value === '' ? 0 : parseInt(value) || 0
                     updateQuantity(item.id, quantity)
                   }}
                   className="w-20"
@@ -114,7 +117,7 @@ export default function UserBag({ catalogId }: UserBagProps) {
         <Button 
           className="w-full" 
           onClick={handleCheckout}
-          disabled={isLoading || !returnDate}
+          disabled={isLoading || !returnDate || !hasValidQuantities}
         >
           {isLoading ? 'Creating the order...' : 'Place the order'}
         </Button>
