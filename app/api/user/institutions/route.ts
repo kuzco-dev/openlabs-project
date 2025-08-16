@@ -28,5 +28,5 @@ export async function GET() {
     const { data: supabaseDataInstitutions } = await supabase.from("institutions").select('*')
     
     // 3. Return response
-    return NextResponse.json(supabaseDataInstitutions);
+    return NextResponse.json(supabaseDataInstitutions,  { status: 200 });
 }

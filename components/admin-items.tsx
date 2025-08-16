@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import AdminItemForm from "@/components/admin-item-form"
+import AdminTypesForm from "@/components/admin-types-form"
 import {
   Table,
   TableBody,
@@ -30,6 +31,18 @@ interface Item {
   actual_quantity: number
   created_at: string
   catalog_id: string
+  serial_number?: string
+  item_type_id?: string
+  items_types?: {
+    name: string
+  }
+}
+
+interface ItemType {
+  id: string
+  name: string
+  created_at: string
+  catalog_id: string
 }
 
 export default function AdminItems({
@@ -40,26 +53,35 @@ export default function AdminItems({
   catalogId: string
 }) {
   const [items, setItems] = useState<Item[]>([])
-  //, setLoading] = useState(false)
+  const [itemTypes, setItemTypes] = useState<ItemType[]>([])
+  const [refetchTrigger, setRefetchTrigger] = useState(0)
   //const router = useRouter()
 
-  const fetchItems = useCallback(async () => {
-    if (!catalogId) return
-    //setLoading(true)
-    try {
-      const res = await fetch(`/api/admin/items?catalog=${catalogId}`)
-      const data = await res.json()
-      setItems(data)
-    } catch (err) {
-      console.error('Failed to fetch items:', err)
-    } finally {
-      //setLoading(false)
-    }
-  }, [catalogId])
+  const triggerRefetch = useCallback(() => {
+    setRefetchTrigger(prev => prev + 1)
+  }, [])
 
   useEffect(() => {
-    fetchItems()
-  }, [fetchItems])
+    if (!catalogId) return
+
+    const fetchData = async () => {
+      try {
+        // Fetch items
+        const itemsRes = await fetch(`/api/admin/items?catalog=${catalogId}`)
+        const itemsData = await itemsRes.json()
+        setItems(itemsData)
+
+        // Fetch item types
+        const typesRes = await fetch(`/api/admin/types?catalog=${catalogId}`)
+        const typesData = await typesRes.json()
+        setItemTypes(typesData)
+      } catch (err) {
+        console.error('Failed to fetch data:', err)
+      }
+    }
+
+    fetchData()
+  }, [catalogId, refetchTrigger])
 
   const handleDelete = async (itemId: string) => {
     if (!confirm('Are you sure you want to delete this item ?')) return
@@ -82,7 +104,7 @@ export default function AdminItems({
       .remove([`${itemId}.jpg`])
 
     // Rafraîchir la liste des items
-    fetchItems()
+    triggerRefetch()
   }
 
   const handleEdit = async (itemId: string, formData: FormData) => {
@@ -95,6 +117,8 @@ export default function AdminItems({
         description: formData.get('item_description'),
         default_quantity: Number(formData.get('item_quantity')),
         actual_quantity: Number(formData.get('item_quantity')),
+        serial_number: formData.get('serial_number') || null,
+        item_type_id: formData.get('item_type_id') || null,
       })
       .eq('id', itemId)
 
@@ -118,13 +142,50 @@ export default function AdminItems({
       }
     }
 
-    fetchItems()
+    triggerRefetch()
+  }
+
+  const handleDeleteType = async (typeId: string) => {
+    if (!confirm('Are you sure you want to delete this item type ?')) return
+
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('items_types')
+      .delete()
+      .eq('id', typeId)
+
+    if (error) {
+      console.error('Error deleting item type:', error)
+      return
+    }
+
+    // Rafraîchir la liste des types
+    triggerRefetch()
+  }
+
+  const handleEditType = async (typeId: string, formData: FormData) => {
+    const supabase = createClient()
+    
+    const { error: updateError } = await supabase
+      .from('items_types')
+      .update({
+        name: formData.get('type_name'),
+      })
+      .eq('id', typeId)
+
+    if (updateError) {
+      console.error('Error updating item type:', updateError)
+      return
+    }
+
+    triggerRefetch()
   }
 
   return (
     <div className="flex flex-col p-2">
-      <div className="justify-center flex">
-        <AdminItemForm catalogId={catalogId} onSuccess={fetchItems} />
+      <div className="flex justify-center gap-8">
+        <AdminItemForm catalogId={catalogId} onSuccess={triggerRefetch} />
+        <AdminTypesForm catalogId={catalogId} onSuccess={triggerRefetch} />
       </div>
       <Separator className="my-6"/>
       <Table>
@@ -135,6 +196,8 @@ export default function AdminItems({
             <TableHead>Description</TableHead>
             <TableHead>Default quantity</TableHead>
             <TableHead>Quantity available</TableHead>
+            <TableHead>Serial Number</TableHead>
+            <TableHead>Item Type</TableHead>
             <TableHead>Creation date</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -142,7 +205,7 @@ export default function AdminItems({
         <TableBody>
           {items.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center">
+              <TableCell colSpan={8} className="text-center">
                 No items found.
               </TableCell>
             </TableRow>
@@ -153,6 +216,8 @@ export default function AdminItems({
                 <TableCell>{item.description}</TableCell>
                 <TableCell>{item.default_quantity}</TableCell>
                 <TableCell>{item.actual_quantity}</TableCell>
+                <TableCell>{item.serial_number || '-'}</TableCell>
+                <TableCell>{item.items_types?.name || '-'}</TableCell>
                 <TableCell>{new Date(item.created_at).toLocaleString()}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
@@ -200,6 +265,33 @@ export default function AdminItems({
                               />
                             </div>
                             <div className="space-y-2">
+                              <label htmlFor="serial_number" className="text-sm font-medium">Serial Number (max 30 characters, optional)</label>
+                              <input
+                                id="serial_number"
+                                name="serial_number"
+                                type="text"
+                                defaultValue={item.serial_number || ''}
+                                maxLength={30}
+                                className="w-full border rounded-md px-3 py-2 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label htmlFor="item_type_id" className="text-sm font-medium">Item Type (optional)</label>
+                              <select 
+                                id="item_type_id" 
+                                name="item_type_id"
+                                defaultValue={item.item_type_id || ''}
+                                className="w-full border rounded-md px-3 py-2 text-sm"
+                              >
+                                <option value="">Select a type (optional)</option>
+                                {itemTypes.map((type) => (
+                                  <option key={type.id} value={type.id}>
+                                    {type.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="space-y-2">
                               <label htmlFor="item_image" className="text-sm font-medium">New image (JPEG only)</label>
                               <input
                                 id="item_image"
@@ -222,6 +314,68 @@ export default function AdminItems({
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+      <Separator className="my-6"/>
+      <Table>
+        <TableCaption>List of item types</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Creation date</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {itemTypes.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={3} className="text-center">
+                No item types found.
+              </TableCell>
+            </TableRow>
+          ) : (
+            itemTypes.map((itemType) => (
+              <TableRow key={itemType.id}>
+                <TableCell>{itemType.name}</TableCell>
+                <TableCell>{new Date(itemType.created_at).toLocaleString()}</TableCell>
+                <TableCell>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="icon">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-96 p-4">
+                      <form action={async (formData) => {
+                        await handleEditType(itemType.id, formData)
+                      }}>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label htmlFor="type_name" className="text-sm font-medium">Name</label>
+                            <input
+                              id="type_name"
+                              name="type_name"
+                              defaultValue={itemType.name}
+                              className="w-full border rounded-md px-3 py-2 text-sm"
+                              required
+                            />
+                          </div>
+                          <Button type="submit" className="w-full">Modifiy</Button>
+                        </div>
+                      </form>
+                    </PopoverContent>
+                  </Popover>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => handleDeleteType(itemType.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))

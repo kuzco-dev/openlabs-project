@@ -30,5 +30,5 @@ export async function GET() {
     const { data: supabaseInstitutionsData } = await supabase.from("institutions").select('*').eq('creator_id', user.id);
     
     // 3. Return response
-    return NextResponse.json(supabaseInstitutionsData);
+    return NextResponse.json(supabaseInstitutionsData, { status: 200 });
 }

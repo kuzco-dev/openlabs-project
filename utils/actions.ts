@@ -12,10 +12,14 @@ import {
     createCatalogSchema,
     CreateCatalogSchemaType,
     createInstitutionSchema,
-    CreateInstitutionSchemaType
+    CreateInstitutionSchemaType,
+    createItemTypeSchema,
+    CreateItemTypeSchemaType
 } from './schemas'
 
 import { revalidatePath } from 'next/cache'
+
+// Verifier chaque sessions et role sur chaque server actions
 
 /*
 Server Action: login form submission.
@@ -124,7 +128,7 @@ export async function signup(prevState: any, data: unknown) {
     const { error: supabseProfilesError } = await supabase
     .from('profiles')
     .insert({
-        user_id: supabaseSignupData?.user?.id,
+        id: supabaseSignupData?.user?.id,
         email: validData.email,
     })
     if (supabseRolesError) {
@@ -146,6 +150,8 @@ export async function signout() {
 
 /*
 Server Action: admin item form submission.
+    - Validates form using Zod schema
+    - Registers user via Supabase auth
 */
 export async function adminCreateItem(catalogId: string, prevState: any, formData: unknown) {
     if (!(formData instanceof FormData)) {
@@ -184,6 +190,8 @@ export async function adminCreateItem(catalogId: string, prevState: any, formDat
         default_quantity: Number(validData.item_quantity),
         actual_quantity: Number(validData.item_quantity),
         catalog_id: catalogId,
+        serial_number: validData.serial_number || null,
+        item_type_id: validData.item_type_id || null,
       })
       .select()
       .single()
@@ -204,7 +212,6 @@ export async function adminCreateItem(catalogId: string, prevState: any, formDat
           cacheControl: '3600',
           upsert: false
         })
-        console.log(uploadError)
 
       if (uploadError) {
         await supabase
@@ -750,7 +757,7 @@ export async function userFinalizeOrder(orderId: string) {
 
     const { data: order, error: orderError } = await supabase
         .from('orders')
-        .select('user_id, status')
+        .select('user_id, status, end_date')
         .eq('id', orderId)
         .single()
 
@@ -768,46 +775,8 @@ export async function userFinalizeOrder(orderId: string) {
         }
     }
 
-    const { data: orderItems, error: orderItemsError } = await supabase
-        .from('order_items')
-        .select('item_id, quantity')
-        .eq('order_id', orderId)
-
-    if (orderItemsError) {
-        return {
-            success: false,
-            message: 'Internal error, try later'
-        }
-    }
-
-    for (const orderItem of orderItems) {
-        const { data: currentItem, error: getItemError } = await supabase
-            .from('items')
-            .select('actual_quantity')
-            .eq('id', orderItem.item_id)
-            .single()
-
-        if (getItemError || !currentItem) {
-            return {
-                success: false,
-                message: 'Internal error, try later'
-            }
-        }
-
-        const { error: updateError } = await supabase
-            .from('items')
-            .update({ 
-                actual_quantity: currentItem.actual_quantity + orderItem.quantity
-            })
-            .eq('id', orderItem.item_id)
-
-        if (updateError) {
-            return {
-                success: false,
-                message: 'Internal error, try later'
-            }
-        }
-    }
+    // Note: Stock will be incremented when admin validates the return
+    // This prevents stock from being incremented immediately when user finalizes order
 
     const { error: updateError } = await supabase
         .from('orders')
@@ -818,6 +787,34 @@ export async function userFinalizeOrder(orderId: string) {
         return {
             success: false,
             message: 'Internal error, try later'
+        }
+    }
+
+    // Check if the order was finalized after the end date and add delay if needed
+    if (order.end_date) {
+        const endDate = new Date(order.end_date)
+        const today = new Date()
+        
+        if (today > endDate) {
+            // Order was finalized after the end date, increment delays count
+            // First get current delays count
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('delays')
+                .eq('id', user.id)
+                .single()
+
+            if (!profileError && profileData) {
+                const { error: delayError } = await supabase
+                    .from('profiles')
+                    .update({ delays: profileData.delays + 1 })
+                    .eq('id', user.id)
+
+                if (delayError) {
+                    console.error('Error updating delays count:', delayError)
+                    // Don't fail the order finalization if delay update fails
+                }
+            }
         }
     }
 
@@ -849,6 +846,20 @@ export async function adminAddStudent(institutionId: string, email: string) {
         return {
             success: false,
             message: 'Not authorized'
+        }
+    }
+
+    // Vérifier que l'email existe dans la table profiles
+    const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single()
+
+    if (profileError || !profileData) {
+        return {
+            success: false,
+            message: 'Email does not exist in the system'
         }
     }
 
@@ -926,5 +937,248 @@ export async function adminRemoveStudent(institutionId: string, studentId: strin
     return {
         success: true,
         message: 'Student removed successfully'
+    }
+}
+
+/*
+Server Action: Admin item type creation.
+*/
+export async function adminCreateItemType(catalogId: string, prevState: any, formData: unknown) {
+    if (!(formData instanceof FormData)) {
+        return {
+            success: false,
+            message: 'Invalid data format',
+        }
+    }
+    const formObject = Object.fromEntries(formData.entries())
+    const formResult = createItemTypeSchema.safeParse(formObject)
+    if (!formResult.success) {
+        const zodErrors = formResult.error.flatten()
+        const messages = Object.values(zodErrors.fieldErrors).flat().join(', ')
+        return {
+            success: false,
+            message: messages || 'Invalid input',
+        }
+    }
+    const validData: CreateItemTypeSchemaType = formResult.data
+
+    const supabase = await createClient()
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+  
+    if (userError || !userData?.user?.id) {
+        return {
+            success: false,
+            message: 'Authentication error',
+        }
+    }
+  
+    const { data: itemTypeData, error: supabaseItemTypeError } = await supabase
+        .from('items_types')
+        .insert({
+            name: validData.type_name,
+            catalog_id: catalogId,
+        })
+        .select()
+        .single()
+
+    if (supabaseItemTypeError || !itemTypeData) {
+        return {
+            success: false,
+            message: 'Internal error, try later',
+        }
+    }
+    
+    return {
+        success: true,
+        message: 'Item type created successfully',
+    }
+}
+
+/*
+Server Action: Admin send order message.
+*/
+export async function adminSendOrderMessage(orderId: string, prevState: any, formData: unknown) {
+    if (!(formData instanceof FormData)) {
+        return {
+            success: false,
+            message: 'Invalid data format',
+        }
+    }
+
+    const message = formData.get('message')
+    if (!message || typeof message !== 'string' || message.trim() === '') {
+        return {
+            success: false,
+            message: 'Message is required',
+        }
+    }
+
+    if (message.trim().length > 80) {
+        return {
+            success: false,
+            message: 'Message must be 80 characters or less',
+        }
+    }
+
+    const supabase = await createClient()
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+  
+    if (userError || !userData?.user?.id) {
+        return {
+            success: false,
+            message: 'Authentication error',
+        }
+    }
+
+    // Check if user is admin
+    const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('role')
+        .eq('user_id', userData.user.id)
+        .single()
+    
+    if (roleError || roleData?.role !== 'admin') {
+        return {
+            success: false,
+            message: 'Not authorized',
+        }
+    }
+
+    // Insert the message
+    const { error: insertError } = await supabase
+        .from('order_messages')
+        .insert({
+            message: message.trim(),
+            order_id: orderId,
+        })
+
+    if (insertError) {
+        return {
+            success: false,
+            message: 'Error sending message',
+        }
+    }
+
+    return {
+        success: true,
+        message: 'Message sent successfully',
+    }
+}
+
+/*
+Server Action: Admin order validation.
+*/
+export async function adminValidateOrderReturn(orderId: string) {
+    const supabase = await createClient()
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+        return {
+            success: false,
+            message: 'Not authorized'
+        }
+    }
+
+    // Check if user is admin
+    const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+    
+    if (roleError || roleData?.role !== 'admin') {
+        return {
+            success: false,
+            message: 'Not authorized',
+        }
+    }
+
+    // Check if order exists and is already returned (status = true)
+    const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select('status, validation')
+        .eq('id', orderId)
+        .single()
+
+    if (orderError || !orderData) {
+        return {
+            success: false,
+            message: 'Order not found',
+        }
+    }
+
+    if (!orderData.status) {
+        return {
+            success: false,
+            message: 'Order is not yet returned by the user',
+        }
+    }
+
+    if (orderData.validation) {
+        return {
+            success: false,
+            message: 'Order is already validated',
+        }
+    }
+
+    // Get order items to increment stock
+    const { data: orderItems, error: orderItemsError } = await supabase
+        .from('order_items')
+        .select('item_id, quantity')
+        .eq('order_id', orderId)
+
+    if (orderItemsError) {
+        return {
+            success: false,
+            message: 'Internal error, try later'
+        }
+    }
+
+    // Increment stock for each item in the order
+    for (const orderItem of orderItems) {
+        const { data: currentItem, error: getItemError } = await supabase
+            .from('items')
+            .select('actual_quantity')
+            .eq('id', orderItem.item_id)
+            .single()
+
+        if (getItemError || !currentItem) {
+            return {
+                success: false,
+                message: 'Internal error, try later'
+            }
+        }
+
+        const { error: updateStockError } = await supabase
+            .from('items')
+            .update({ 
+                actual_quantity: currentItem.actual_quantity + orderItem.quantity
+            })
+            .eq('id', orderItem.item_id)
+
+        if (updateStockError) {
+            return {
+                success: false,
+                message: 'Error updating stock',
+            }
+        }
+    }
+
+    // Update the validation column
+    const { error: updateError } = await supabase
+        .from('orders')
+        .update({ validation: true })
+        .eq('id', orderId)
+
+    if (updateError) {
+        return {
+            success: false,
+            message: 'Error validating order',
+        }
+    }
+
+    return {
+        success: true,
+        message: 'Order validated successfully',
     }
 }

@@ -33,6 +33,7 @@ export async function GET() {
                 created_at,
                 catalog_id,
                 end_date,
+                validation,
                 catalog:catalogs (
                     name,
                     acronym
@@ -55,8 +56,26 @@ export async function GET() {
             )
         }
 
-        // 3. Return response
-        return NextResponse.json(supabaseOrdersData)
+        // 3. Get the latest message for each order
+        const ordersWithMessages = await Promise.all(
+            (supabaseOrdersData || []).map(async (order) => {
+                const { data: latestMessage } = await supabase
+                    .from('order_messages')
+                    .select('message, created_at')
+                    .eq('order_id', order.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single()
+
+                return {
+                    ...order,
+                    latest_message: latestMessage || null
+                }
+            })
+        )
+
+        // 4. Return response
+        return NextResponse.json(ordersWithMessages,  { status: 200 })
     } catch {
         return NextResponse.json(
             { error: 'Internal error' },

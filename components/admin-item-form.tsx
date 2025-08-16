@@ -25,6 +25,8 @@ const itemSchema = z.object({
     .transform((val) => parseInt(val))
     .pipe(z.number().min(1, "Quantity must be at least 1")),
   item_image: z.instanceof(File).optional(),
+  serial_number: z.string().max(30, "Serial number is too long").optional(),
+  item_type_id: z.string().optional(),
 })
 
 type FormErrors = {
@@ -32,45 +34,63 @@ type FormErrors = {
   item_description?: string
   item_quantity?: string
   item_image?: string
+  serial_number?: string
+  item_type_id?: string
 }
 
 const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
   const createItemWithCatalogId = adminCreateItem.bind(null, catalogId)
   const [state, formAction, pending] = useActionState(createItemWithCatalogId, initialState)
   const [errors, setErrors] = useState<FormErrors>({})
-  const [formData, setFormData] = useState<FormData | null>(null)
   const [isPending, startTransition] = useTransition()
-  console.log(formData, )
+  const [itemTypes, setItemTypes] = useState<Array<{id: string, name: string}>>([])
 
   useEffect(() => {
     if (state.success && onSuccess) {
       onSuccess()
       setErrors({})
-      setFormData(null)
     }
-  }, [state, onSuccess])
+  }, [state]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch item types for this catalog
+  useEffect(() => {
+    if (!catalogId) return
+
+    const fetchItemTypes = async () => {
+      try {
+        const response = await fetch(`/api/admin/types?catalog=${catalogId}`)
+        const types = await response.json()
+        setItemTypes(types)
+      } catch (error) {
+        console.error('Failed to fetch item types:', error)
+      }
+    }
+
+    fetchItemTypes()
+  }, [catalogId])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setErrors({})
 
     const form = e.currentTarget
-    const formData = new FormData(form)
+    const formDataObj = new FormData(form)
 
     try {
       // Validate form data
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const validatedData = itemSchema.parse({
-        item_name: formData.get('item_name'),
-        item_description: formData.get('item_description'),
-        item_quantity: formData.get('item_quantity'),
-        item_image: formData.get('item_image'),
+        item_name: formDataObj.get('item_name'),
+        item_description: formDataObj.get('item_description'),
+        item_quantity: formDataObj.get('item_quantity'),
+        item_image: formDataObj.get('item_image'),
+        serial_number: formDataObj.get('serial_number'),
+        item_type_id: formDataObj.get('item_type_id'),
       })
-      console.log(validatedData)
 
       // If validation passes, submit the form
-      setFormData(formData)
       startTransition(() => {
-        formAction(formData)
+        formAction(formDataObj)
       })
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -124,6 +144,37 @@ const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
         />
         {errors.item_quantity && (
           <p className="text-sm text-red-500">{errors.item_quantity}</p>
+        )}
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="serial_number">Serial Number (max 30 characters, optional)</Label>
+        <Input 
+          id="serial_number" 
+          name="serial_number" 
+          type="text" 
+          maxLength={30}
+          className={errors.serial_number ? "border-red-500" : ""}
+        />
+        {errors.serial_number && (
+          <p className="text-sm text-red-500">{errors.serial_number}</p>
+        )}
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="item_type_id">Item Type (optional)</Label>
+        <select 
+          id="item_type_id" 
+          name="item_type_id"
+          className={`w-full border rounded-md px-3 py-2 text-sm ${errors.item_type_id ? "border-red-500" : ""}`}
+        >
+          <option value="">Select a type (optional)</option>
+          {itemTypes.map((type) => (
+            <option key={type.id} value={type.id}>
+              {type.name}
+            </option>
+          ))}
+        </select>
+        {errors.item_type_id && (
+          <p className="text-sm text-red-500">{errors.item_type_id}</p>
         )}
       </div>
       <div className="grid gap-2">

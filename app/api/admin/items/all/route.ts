@@ -1,0 +1,53 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@/utils/supabase/server'
+
+/**
+ * @route   GET /api/admin/items/all?catalog=...
+ * @desc    Retrieves all items from a specific catalog
+ * @access  Private - admin role required
+ * 
+ * @query   {string} catalog - ID of the catalog
+ * 
+ * @returns {200} Returns list of items
+ * @returns {400} Missing catalog ID
+ * @returns {401} Not authorized (not logged in or not admin)
+ * @returns {500} Internal server error
+ */
+export async function GET(req: Request) {
+  
+    // 1. Verify user and role
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
+    }
+    const { data: supabaseRolesData, error: supabaseRolesError } = await supabase.from('roles').select('role').eq('user_id', user.id).maybeSingle()
+    if (supabaseRolesData?.role != 'admin' || supabaseRolesError) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
+    }
+
+    // 2. Extract parameters
+    const { searchParams } = new URL(req.url)
+    const catalogId = searchParams.get('catalog')
+
+    if (!catalogId) {
+        return NextResponse.json({ error: 'Missing catalog ID' }, { status: 400 })
+    }
+
+    // 3. Get all items from the catalog
+    const { data: items, error: itemsError } = await supabase
+        .from('items')
+        .select('id, name, description, default_quantity, actual_quantity')
+        .eq('catalog_id', catalogId)
+        .order('name', { ascending: true })
+
+    if (itemsError) {
+        return NextResponse.json({
+            error: 'Error while fetching items',
+            details: itemsError
+        }, { status: 500 })
+    }
+
+    // 4. Return items list
+    return NextResponse.json(items || [], { status: 200 })
+} 

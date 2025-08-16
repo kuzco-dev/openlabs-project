@@ -48,5 +48,5 @@ export async function GET(request: Request) {
     }))
 
     // 5. Return response
-    return NextResponse.json(itemsWithImages)
+    return NextResponse.json(itemsWithImages ,  { status: 200 })
 }

@@ -1,12 +1,11 @@
 import { createClient } from '@/utils/supabase/server';
-import { GET } from '@/app/api/admin/settings/route';
-import { NextResponse } from 'next/server';
+import { GET } from '@/app/api/admin/settings/students/route';
 
 jest.mock('@/utils/supabase/server', () => ({
   createClient: jest.fn(),
 }));
 
-describe('GET /api/admin/settings', () => {
+describe('GET /api/admin/settings/students', () => {
   let mockSupabase: any;
 
   beforeEach(() => {
@@ -19,7 +18,6 @@ describe('GET /api/admin/settings', () => {
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       maybeSingle: jest.fn().mockReturnThis(),
-      single: jest.fn().mockReturnThis(),
     };
 
     (createClient as jest.Mock).mockResolvedValue(mockSupabase);
@@ -28,14 +26,14 @@ describe('GET /api/admin/settings', () => {
   it('should return 401 if user is not authenticated', async () => {
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null } });
 
-    const request = new Request('http://localhost:3000/api/admin/settings?institution=inst1');
-    const response = await GET(request) as unknown as API.Response;
+    const request = new Request('http://localhost:3000/api/admin/settings/students?institution=inst1');
+    const response = (await GET(request)) as unknown as API.Response;
     expect(response.data).toEqual({ error: 'Not authorized' });
     expect(response.init?.status).toBe(401);
   });
 
   it('should return 401 if user is not an admin', async () => {
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: '87d07bb3-a0c9-4b1e-983e-f9de348416be' } } });
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     mockSupabase.from.mockImplementation(() => ({
       select: () => ({
         eq: () => ({
@@ -44,14 +42,14 @@ describe('GET /api/admin/settings', () => {
       }),
     }));
 
-    const request = new Request('http://localhost:3000/api/admin/settings?institution=inst1');
-    const response = await GET(request) as unknown as API.Response;
+    const request = new Request('http://localhost:3000/api/admin/settings/students?institution=inst1');
+    const response = (await GET(request)) as unknown as API.Response;
     expect(response.data).toEqual({ error: 'Not authorized' });
     expect(response.init?.status).toBe(401);
   });
 
   it('should return 400 if institution ID is missing', async () => {
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: '87d07bb3-a0c9-4b1e-983e-f9de348416be' } } });
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'user-2' } } });
     mockSupabase.from.mockImplementation(() => ({
       select: () => ({
         eq: () => ({
@@ -60,23 +58,19 @@ describe('GET /api/admin/settings', () => {
       }),
     }));
 
-    const request = new Request('http://localhost:3000/api/admin/settings');
-    const response = await GET(request) as unknown as API.Response;
+    const request = new Request('http://localhost:3000/api/admin/settings/students');
+    const response = (await GET(request)) as unknown as API.Response;
     expect(response.data).toEqual({ error: 'Missing institution ID' });
     expect(response.init?.status).toBe(400);
   });
 
-  it('should return institution with catalogs for a valid admin user', async () => {
-    const mockInstitution = {
-      id: 'inst1',
-      name: 'Test Institution',
-      catalogs: [
-        { id: 'cat1', name: 'Fall Catalog' },
-        { id: 'cat2', name: 'Spring Catalog' },
-      ],
-    };
+  it('should return students list for a valid admin user', async () => {
+    const mockStudents = [
+      { id: 's1', email: 'a@example.com', created_at: '2024-01-01T00:00:00Z' },
+      { id: 's2', email: 'b@example.com', created_at: '2024-01-02T00:00:00Z' },
+    ];
 
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'user-3' } } });
     mockSupabase.from.mockImplementation((table: string) => {
       if (table === 'roles') {
         return {
@@ -87,26 +81,24 @@ describe('GET /api/admin/settings', () => {
           }),
         } as any;
       }
-      if (table === 'institutions') {
+      if (table === 'institution_list') {
         return {
           select: () => ({
-            eq: () => ({
-              single: () => Promise.resolve({ data: mockInstitution }),
-            }),
+            eq: () => Promise.resolve({ data: mockStudents }),
           }),
         } as any;
       }
       return {} as any;
     });
 
-    const request = new Request('http://localhost:3000/api/admin/settings?institution=inst1');
+    const request = new Request('http://localhost:3000/api/admin/settings/students?institution=inst1');
     const response = (await GET(request)) as unknown as API.Response;
-    expect(response.data).toEqual(mockInstitution);
+    expect(response.data).toEqual(mockStudents);
     expect(response.init?.status).toBe(200);
   });
 
-  it('should return 500 if fetching institution fails', async () => {
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'user-2' } } });
+  it('should return 500 if fetching students fails', async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'user-4' } } });
     mockSupabase.from.mockImplementation((table: string) => {
       if (table === 'roles') {
         return {
@@ -117,26 +109,24 @@ describe('GET /api/admin/settings', () => {
           }),
         } as any;
       }
-      if (table === 'institutions') {
+      if (table === 'institution_list') {
         return {
           select: () => ({
-            eq: () => ({
-              single: () => Promise.resolve({ error: 'Database error' }),
-            }),
+            eq: () => Promise.resolve({ error: 'Database error' }),
           }),
         } as any;
       }
       return {} as any;
     });
 
-    const request = new Request('http://localhost:3000/api/admin/settings?institution=inst1');
+    const request = new Request('http://localhost:3000/api/admin/settings/students?institution=inst1');
     const response = (await GET(request)) as unknown as API.Response;
     expect(response.data).toEqual({ error: 'Internal error' });
     expect(response.init?.status).toBe(500);
   });
 
   it('should return 401 if roles lookup fails', async () => {
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'user-3' } } });
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'user-5' } } });
     mockSupabase.from.mockImplementation((table: string) => {
       if (table === 'roles') {
         return {
@@ -150,10 +140,10 @@ describe('GET /api/admin/settings', () => {
       return {} as any;
     });
 
-    const request = new Request('http://localhost:3000/api/admin/settings?institution=inst1');
+    const request = new Request('http://localhost:3000/api/admin/settings/students?institution=inst1');
     const response = (await GET(request)) as unknown as API.Response;
     expect(response.data).toEqual({ error: 'Not authorized' });
     expect(response.init?.status).toBe(401);
   });
-}); 
+});
 
