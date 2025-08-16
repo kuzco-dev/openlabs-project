@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     if (!user) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
     }
-    const { data: supabaseRolesData, error: supabaseRolesError } = await supabase.from('roles').select('role').eq('user_id', user.id).maybeSingle()
+    const { data: supabaseRolesData } = await supabase.from('roles').select('role').eq('user_id', user.id).maybeSingle()
     if (supabaseRolesData?.role != 'admin' ) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
     }
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
     }
 
     // 3. Retrieve items with type names
-    const { data: supabaseItemsData, error: supabaseItemsError } = await supabase
+    const { data: supabaseItemsData } = await supabase
         .from('items')
         .select(`
             *,

@@ -202,6 +202,7 @@ export default function AdminOrders({
   const [openItem, setOpenItem] = useState(false)
   const [openSerialNumber, setOpenSerialNumber] = useState(false)
   const [openItemType, setOpenItemType] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [validatingOrder, setValidatingOrder] = useState<string | null>(null)
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
   const [validatingOrders, setValidatingOrders] = useState<Set<string>>(new Set())
@@ -293,6 +294,8 @@ export default function AdminOrders({
     }
   }
 
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleValidateOrder = async (orderId: string) => {
     setValidatingOrder(orderId)
     try {

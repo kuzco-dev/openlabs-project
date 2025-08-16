@@ -41,6 +41,7 @@ type FormErrors = {
 const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
   const createItemWithCatalogId = adminCreateItem.bind(null, catalogId)
   const [state, formAction, pending] = useActionState(createItemWithCatalogId, initialState)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [errors, setErrors] = useState<FormErrors>({})
   const [formData, setFormData] = useState<FormData | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -80,6 +81,7 @@ const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
 
     try {
       // Validate form data
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const validatedData = itemSchema.parse({
         item_name: formData.get('item_name'),
         item_description: formData.get('item_description'),

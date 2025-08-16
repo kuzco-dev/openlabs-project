@@ -17,9 +17,10 @@ export default function QRCodeScanner() {
       .start(
         { facingMode: "environment" },
         config,
-        (decodedText, decodedResult) => {
+        (decodedText) => {
           // decodedText contient l'ID ou le contenu du QR code
           alert(`QR Code détecté : ${decodedText}`);
+          
         },
         (errorMessage) => {
           // Optionnel : gestion des erreurs de scan

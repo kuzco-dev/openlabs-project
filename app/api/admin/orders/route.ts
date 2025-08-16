@@ -58,7 +58,7 @@ export async function GET(req: Request) {
     const enrichedOrders = await Promise.all(
         supabaseOrdersData.map(async (order) => {
             // Get order items
-            const { data: orderItems, error: itemsError } = await supabase
+            const { data: orderItems } = await supabase
             .from('order_items')
             .select(`
                 quantity,
@@ -76,7 +76,7 @@ export async function GET(req: Request) {
             
 
             // Get user email from profiles
-            const { data: profileData, error: profileError } = await supabase
+            const { data: profileData } = await supabase
             .from('profiles')
             .select('email')
             .eq('id', order.user_id)

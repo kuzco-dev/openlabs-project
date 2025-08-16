@@ -3,7 +3,6 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts"
-import { TrendingUp } from "lucide-react"
 
 import {
   Card,
