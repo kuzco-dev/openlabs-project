@@ -19,8 +19,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, QrCode } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
+import { QRCodeComponent } from "@/components/ui/qr-code"
 //import { useRouter } from "next/navigation"
 
 interface Item {
@@ -304,6 +305,20 @@ export default function AdminItems({
                             <Button type="submit" className="w-full">Modifiy</Button>
                           </div>
                         </form>
+                      </PopoverContent>
+                    </Popover>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="icon">
+                          <QrCode className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 p-0">
+                        <QRCodeComponent 
+                          value={item.id} 
+                          title={`QR Code - ${item.name}`}
+                          size={200}
+                        />
                       </PopoverContent>
                     </Popover>
                     <Button
