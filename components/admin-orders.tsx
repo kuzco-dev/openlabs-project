@@ -312,7 +312,7 @@ export default function AdminOrders({
       }
       
     } catch (error) {
-      alert('Error validating order')
+      alert(`Error validating orders: ${error}`)
     } finally {
       setValidatingOrder(null)
     }
@@ -346,7 +346,7 @@ export default function AdminOrders({
       setSelectedOrders(new Set())
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      alert('Error validating orders')
+      alert(`Error validating orders: ${error}`)
     } finally {
       setValidatingOrders(new Set())
     }
