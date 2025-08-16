@@ -77,6 +77,15 @@ export default function UserItems({ catalogId }: UserItemsProps) {
     const item = items.find(i => i.id === itemId)
     if (!item) return
 
+    // Si la valeur est vide, mettre à 0
+    if (value === '') {
+      setQuantities(prev => ({
+        ...prev,
+        [itemId]: 0
+      }))
+      return
+    }
+
     const quantity = parseInt(value) || 0
     const maxQuantity = item.actual_quantity
     const bagQuantity = bagItems.find(i => i.id === itemId)?.quantity || 0
@@ -166,7 +175,7 @@ export default function UserItems({ catalogId }: UserItemsProps) {
                         type="number"
                         min="0"
                         max={availableQuantity}
-                        value={quantities[item.id] || 0}
+                        value={quantities[item.id] || ''}
                         onChange={(e) => handleQuantityChange(item.id, e.target.value)}
                         className="w-20"
                       />
