@@ -5,7 +5,7 @@ import { Html5Qrcode } from "html5-qrcode";
 
 export default function QRCodeScanner() {
   const qrCodeRegionId = "qr-code-region";
-  const html5QrcodeScannerRef = useRef(null);
+  const html5QrcodeScannerRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
     const html5QrcodeScanner = new Html5Qrcode(qrCodeRegionId);
