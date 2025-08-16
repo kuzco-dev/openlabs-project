@@ -30,36 +30,31 @@ const AdminTypesForm = ({ catalogId, onSuccess }: AdminTypesFormProps) => {
   const createTypeWithCatalogId = adminCreateItemType.bind(null, catalogId)
   const [state, formAction, pending] = useActionState(createTypeWithCatalogId, initialState)
   const [errors, setErrors] = useState<FormErrors>({})
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [formData, setFormData] = useState<FormData | null>(null)
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
     if (state.success && onSuccess) {
       onSuccess()
       setErrors({})
-      setFormData(null)
     }
-  }, [state]) // Remove onSuccess from dependencies
+  }, [state]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setErrors({})
 
     const form = e.currentTarget
-    const formData = new FormData(form)
+    const formDataObj = new FormData(form)
 
     try {
       // Validate form data
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const validatedData = typeSchema.parse({
-        type_name: formData.get('type_name'),
+        type_name: formDataObj.get('type_name'),
       })
 
       // If validation passes, submit the form
-      setFormData(formData)
       startTransition(() => {
-        formAction(formData)
+        formAction(formDataObj)
       })
     } catch (error) {
       if (error instanceof z.ZodError) {

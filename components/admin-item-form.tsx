@@ -42,8 +42,6 @@ const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
   const createItemWithCatalogId = adminCreateItem.bind(null, catalogId)
   const [state, formAction, pending] = useActionState(createItemWithCatalogId, initialState)
   const [errors, setErrors] = useState<FormErrors>({})
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [formData, setFormData] = useState<FormData | null>(null)
   const [isPending, startTransition] = useTransition()
   const [itemTypes, setItemTypes] = useState<Array<{id: string, name: string}>>([])
 
@@ -51,9 +49,8 @@ const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
     if (state.success && onSuccess) {
       onSuccess()
       setErrors({})
-      setFormData(null)
     }
-  }, [state]) // Remove onSuccess from dependencies
+  }, [state]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch item types for this catalog
   useEffect(() => {
@@ -77,24 +74,22 @@ const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
     setErrors({})
 
     const form = e.currentTarget
-    const formData = new FormData(form)
+    const formDataObj = new FormData(form)
 
     try {
       // Validate form data
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const validatedData = itemSchema.parse({
-        item_name: formData.get('item_name'),
-        item_description: formData.get('item_description'),
-        item_quantity: formData.get('item_quantity'),
-        item_image: formData.get('item_image'),
-        serial_number: formData.get('serial_number'),
-        item_type_id: formData.get('item_type_id'),
+        item_name: formDataObj.get('item_name'),
+        item_description: formDataObj.get('item_description'),
+        item_quantity: formDataObj.get('item_quantity'),
+        item_image: formDataObj.get('item_image'),
+        serial_number: formDataObj.get('serial_number'),
+        item_type_id: formDataObj.get('item_type_id'),
       })
 
       // If validation passes, submit the form
-      setFormData(formData)
       startTransition(() => {
-        formAction(formData)
+        formAction(formDataObj)
       })
     } catch (error) {
       if (error instanceof z.ZodError) {

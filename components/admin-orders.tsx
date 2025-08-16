@@ -310,9 +310,9 @@ export default function AdminOrders({
       } else {
         alert(result.message)
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      
     } catch (error) {
-      alert('Error validating order')
+      alert('Error validating order', error)
     } finally {
       setValidatingOrder(null)
     }

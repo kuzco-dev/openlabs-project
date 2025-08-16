@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import AdminItemForm from "@/components/admin-item-form"
 import AdminTypesForm from "@/components/admin-types-form"
 import {
@@ -58,9 +58,9 @@ export default function AdminItems({
   //, setLoading] = useState(false)
   //const router = useRouter()
 
-  const triggerRefetch = () => {
+  const triggerRefetch = useCallback(() => {
     setRefetchTrigger(prev => prev + 1)
-  }
+  }, [])
 
   useEffect(() => {
     if (!catalogId) return
