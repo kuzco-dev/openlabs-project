@@ -55,7 +55,6 @@ export default function AdminItems({
   const [items, setItems] = useState<Item[]>([])
   const [itemTypes, setItemTypes] = useState<ItemType[]>([])
   const [refetchTrigger, setRefetchTrigger] = useState(0)
-  //, setLoading] = useState(false)
   //const router = useRouter()
 
   const triggerRefetch = useCallback(() => {

@@ -312,7 +312,7 @@ export default function AdminOrders({
       }
       
     } catch (error) {
-      alert('Error validating order', error)
+      alert('Error validating order')
     } finally {
       setValidatingOrder(null)
     }

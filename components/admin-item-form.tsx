@@ -78,6 +78,7 @@ const AdminItemForm = ({ catalogId, onSuccess }: AdminItemFormProps) => {
 
     try {
       // Validate form data
+      // eslint-disable-line react-hooks/exhaustive-deps
       const validatedData = itemSchema.parse({
         item_name: formDataObj.get('item_name'),
         item_description: formDataObj.get('item_description'),
