@@ -34,11 +34,15 @@ export default function Page() {
     const [catalogFormOpen, setCatalogFormOpen] = useState(false)
     const router = useRouter()
 
-    useEffect(() => {
+    const fetchInstitutions = () => {
         fetch('/api/admin/institutions')
         .then(res => res.json())
         .then(data => setInstitutions(data))
         .catch(err => console.error('Failed to fetch institutions:', err))
+    }
+
+    useEffect(() => {
+        fetchInstitutions()
     }, [])
 
     function onSelect(value: string) {
@@ -60,7 +64,7 @@ export default function Page() {
                         </PopoverTrigger>
                         <PopoverContent>
                             <div>
-                                <AdminInstitutionForm />
+                                <AdminInstitutionForm onSuccess={fetchInstitutions} />
                             </div>
                         </PopoverContent>
                     </Popover>

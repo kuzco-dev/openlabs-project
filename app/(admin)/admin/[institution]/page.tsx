@@ -47,8 +47,7 @@ export default function Page() {
     const [catalogs, setCatalogs] = useState<Catalog[]>([])
     const [activeTab, setActiveTab] = useState("orders")
 
-    // Fetch catalogs on load
-    useEffect(() => {
+    const fetchCatalogs = () => {
         if (!institutionId) return
 
         fetch(`/api/admin/catalogs?institution=${institutionId}`)
@@ -60,6 +59,11 @@ export default function Page() {
                 }
             })
             .catch(err => console.error("Failed to fetch catalogs", err))
+    }
+
+    // Fetch catalogs on load
+    useEffect(() => {
+        fetchCatalogs()
     }, [institutionId])
     const renderContent = () => {
         if (!selectedCatalog) {
@@ -95,7 +99,7 @@ export default function Page() {
                         </PopoverTrigger>
                         <PopoverContent>
                             <div>
-                                <AdminCatalogForm institutionId={institutionId}/>
+                                <AdminCatalogForm institutionId={institutionId} onSuccess={fetchCatalogs}/>
                             </div>
                         </PopoverContent>
                     </Popover>

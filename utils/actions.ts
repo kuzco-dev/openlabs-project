@@ -455,6 +455,7 @@ export async function adminCreateCatalog(institutionId: string, prevState: any, 
         }
     }
 
+    revalidatePath(`/admin/${institutionId}`, 'page')
     return {
         success: true,
         message: 'Catalog created successfully',
@@ -512,7 +513,7 @@ export async function adminCreateInstitution(prevState: any, data: unknown){
     revalidatePath('/admin', 'layout')
     return {
         success: true,
-        message: 'Catalog created successfully',
+        message: 'Institution created successfully',
     }
 }
 

@@ -83,7 +83,7 @@ export function QRCodeComponent({
           className="flex items-center gap-2"
         >
           <Download className="h-4 w-4" />
-          Télécharger QR Code
+          Download QR Code
         </Button>
       )}
       <p className="text-sm text-gray-600 text-center">
