@@ -470,9 +470,7 @@ export default function AdminOverview({ institutionId, catalogId }: AdminOvervie
         <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
           <div className="grid flex-1 gap-1">
             <CardTitle>Orders Created Per Day</CardTitle>
-            <CardDescription>
-              Number of orders created for each day (last 30 days)
-            </CardDescription>
+            
           </div>
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger

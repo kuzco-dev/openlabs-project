@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
 import { adminCreateCatalog } from '@/utils/actions'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -11,9 +11,20 @@ const initialState = {
   message: '',
 }
 
-const AdminCatalogForm = ({ institutionId }: { institutionId: string }) => {
+interface AdminCatalogFormProps {
+  institutionId: string
+  onSuccess?: () => void
+}
+
+const AdminCatalogForm = ({ institutionId, onSuccess }: AdminCatalogFormProps) => {
   const createCatalogWithInstitutionId = adminCreateCatalog.bind(null, institutionId)
   const [state, formAction, pending] = useActionState(createCatalogWithInstitutionId, initialState)
+
+  useEffect(() => {
+    if (state.success && state.message && onSuccess) {
+      onSuccess()
+    }
+  }, [state.success, state.message, onSuccess])
 
   return (
     <form className="flex flex-col gap-1 max-w-md" action={formAction}>
